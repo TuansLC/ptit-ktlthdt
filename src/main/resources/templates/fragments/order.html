@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Nhan trang thai don -->
+<span th:fragment="status(s)" class="badge" th:classappend="${'text-bg-' + s.badge}" th:text="${s.label}">Trạng thái</span>
+
+<!-- Bang danh sach don. baseUrl: duong dan trang chi tiet, vi du '/shop/orders' -->
+<div th:fragment="table(orders, baseUrl, showShop)" class="table-responsive">
+    <table class="table table-hover align-middle bg-white">
+        <thead class="table-light">
+        <tr>
+            <th>Mã đơn</th>
+            <th>Ngày tạo</th>
+            <th th:if="${showShop}">Shop</th>
+            <th>Người nhận</th>
+            <th>Phường giao</th>
+            <th class="text-end">Thu hộ</th>
+            <th class="text-end">Phí ship</th>
+            <th>Dịch vụ</th>
+            <th>Trạng thái</th>
+            <th>Shipper</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="o : ${orders}">
+            <td><a th:href="@{${baseUrl + '/' + o.id}}" class="fw-semibold" th:text="${o.code}">GH...</a></td>
+            <td class="small" th:text="${@fmt.dateTime(o.createdAt)}"></td>
+            <td th:if="${showShop}" th:text="${o.shop.shopName}"></td>
+            <td>
+                <div th:text="${o.receiverName}"></div>
+                <div class="small text-muted" th:text="${o.receiverPhone}"></div>
+            </td>
+            <td th:text="${o.deliveryWard.name}"></td>
+            <td class="text-end" th:text="${@fmt.money(o.codAmount)}"></td>
+            <td class="text-end" th:text="${@fmt.money(o.shippingFee)}"></td>
+            <td th:text="${o.serviceType.label}"></td>
+            <td><span th:replace="~{fragments/order :: status(${o.status})}"></span></td>
+            <td th:text="${o.shipper != null ? o.shipper.fullName : '—'}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(orders)}">
+            <td colspan="10" class="text-center text-muted py-4">Không có đơn hàng nào</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Thong tin chi tiet don -->
+<div th:fragment="info(order)" class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Lấy hàng</div>
+            <div class="card-body">
+                <div class="fw-semibold" th:text="${order.shop.shopName}"></div>
+                <div th:text="${order.shop.fullName + ' - ' + order.shop.phone}"></div>
+                <div th:text="${order.pickupAddress + ', phường ' + order.pickupWard.name}"></div>
+                <div class="small text-muted"
+                     th:text="${order.pickupWard.zone != null ? order.pickupWard.zone.name : 'Ngoài phạm vi'}"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header fw-semibold">Giao hàng</div>
+            <div class="card-body">
+                <div class="fw-semibold" th:text="${order.receiverName}"></div>
+                <div th:text="${order.receiverPhone}"></div>
+                <div th:text="${order.receiverAddress + ', phường ' + order.deliveryWard.name}"></div>
+                <div class="small text-muted"
+                     th:text="${order.deliveryWard.zone != null ? order.deliveryWard.zone.name : 'Ngoài phạm vi'}"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row row-cols-2 row-cols-md-4 g-3">
+                    <div><div class="small text-muted">Hàng hóa</div><div th:text="${order.itemDescription}"></div></div>
+                    <div><div class="small text-muted">Khối lượng</div><div th:text="${@fmt.weight(order.weightGram)}"></div></div>
+                    <div><div class="small text-muted">Dịch vụ</div><div th:text="${order.serviceType.label}"></div></div>
+                    <div><div class="small text-muted">Trạng thái</div>
+                        <span th:replace="~{fragments/order :: status(${order.status})}"></span></div>
+                    <div><div class="small text-muted">Tiền thu hộ (COD)</div>
+                        <div class="fw-semibold" th:text="${@fmt.money(order.codAmount)}"></div></div>
+                    <div><div class="small text-muted">Phí vận chuyển</div>
+                        <div class="fw-semibold" th:text="${@fmt.money(order.shippingFee)}"></div></div>
+                    <div><div class="small text-muted">Shipper</div>
+                        <div th:text="${order.shipper != null ? order.shipper.fullName + ' - ' + order.shipper.phone : 'Chưa phân công'}"></div></div>
+                    <div><div class="small text-muted">Số lần giao thất bại</div>
+                        <div th:text="${order.failedAttempts + ' / ' + order.maxDeliveryAttempts}"></div></div>
+                    <div th:if="${order.lastFailReason}"><div class="small text-muted">Lý do thất bại gần nhất</div>
+                        <div th:text="${order.lastFailReason}"></div></div>
+                    <div th:if="${order.deliveredAt}"><div class="small text-muted">Giao thành công lúc</div>
+                        <div th:text="${@fmt.dateTime(order.deliveredAt)}"></div></div>
+                    <div th:if="${order.codRemittance}"><div class="small text-muted">Phiếu nộp COD</div>
+                        <div th:text="${order.codRemittance.code + ' (' + order.codRemittance.statusLabel + ')'}"></div></div>
+                    <div th:if="${order.settlement}"><div class="small text-muted">Phiếu đối soát</div>
+                        <div th:text="${order.settlement.code + ' (' + order.settlement.statusLabel + ')'}"></div></div>
+                    <div th:if="${order.note}" class="col-12"><div class="small text-muted">Ghi chú</div>
+                        <div th:text="${order.note}"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nhat ky trang thai -->
+<div th:fragment="history(history)" class="card mt-3">
+    <div class="card-header fw-semibold">Lịch sử trạng thái</div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item" th:each="h : ${history}">
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <div>
+                    <th:block th:if="${h.fromStatus != null}">
+                        <span th:replace="~{fragments/order :: status(${h.fromStatus})}"></span>
+                        <span class="mx-1">→</span>
+                    </th:block>
+                    <span th:replace="~{fragments/order :: status(${h.toStatus})}"></span>
+                    <span class="ms-2" th:text="${h.note}"></span>
+                </div>
+                <div class="small text-muted">
+                    <span th:text="${h.actorName + ' (' + h.actorRole + ')'}"></span>,
+                    <span th:text="${@fmt.dateTime(h.createdAt)}"></span>
+                </div>
+            </div>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>

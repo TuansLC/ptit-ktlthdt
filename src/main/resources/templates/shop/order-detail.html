@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chi tiết đơn')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Đơn <span th:text="${order.code}"></span></h1>
+        <div class="d-flex gap-2">
+            <form th:if="${order.allows(act['CANCEL'])}" th:action="@{/shop/orders/{id}/cancel(id=${order.id})}" method="post"
+                  onsubmit="return confirm('Hủy đơn này?')">
+                <button class="btn btn-outline-danger">Hủy đơn</button>
+            </form>
+            <a class="btn btn-outline-secondary" th:href="@{/shop/orders}">← Danh sách</a>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/order :: info(${order})}"></div>
+    <div th:replace="~{fragments/order :: history(${history})}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

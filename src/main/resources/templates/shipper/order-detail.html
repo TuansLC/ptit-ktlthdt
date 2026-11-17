@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Xử lý đơn')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Đơn <span th:text="${order.code}"></span></h1>
+        <a class="btn btn-outline-secondary" th:href="@{/shipper}">← Đơn cần xử lý</a>
+    </div>
+
+    <div class="card mb-3 border-primary"
+         th:if="${order.allows(act['PICK_UP']) or order.allows(act['DELIVER_SUCCESS']) or order.allows(act['CONFIRM_RETURNED'])}">
+        <div class="card-header fw-semibold">Thao tác</div>
+        <div class="card-body">
+            <form th:if="${order.allows(act['PICK_UP'])}" th:action="@{/shipper/orders/{id}/pickup(id=${order.id})}" method="post">
+                <button class="btn btn-primary">Xác nhận đã lấy hàng</button>
+            </form>
+
+            <div th:if="${order.allows(act['DELIVER_SUCCESS'])}" class="row g-3">
+                <div class="col-md-6">
+                    <form th:action="@{/shipper/orders/{id}/success(id=${order.id})}" method="post" class="border rounded p-3 h-100">
+                        <div class="fw-semibold mb-2 text-success">Giao thành công</div>
+                        <label class="form-label">Số tiền đã thu của người nhận (đ)</label>
+                        <input class="form-control mb-2" type="number" name="collectedAmount" min="0" required
+                               th:value="${order.codAmount}">
+                        <div class="small text-muted mb-2">Phải đúng bằng tiền thu hộ <strong th:text="${@fmt.money(order.codAmount)}"></strong></div>
+                        <button class="btn btn-success">Xác nhận giao thành công</button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <form th:action="@{/shipper/orders/{id}/fail(id=${order.id})}" method="post" class="border rounded p-3 h-100">
+                        <div class="fw-semibold mb-2 text-warning">Giao thất bại</div>
+                        <label class="form-label">Lý do</label>
+                        <select class="form-select mb-2" name="reason" required>
+                            <option value="">-- Chọn lý do --</option>
+                            <option>Khách không nghe máy</option>
+                            <option>Khách hẹn giao lại</option>
+                            <option>Khách từ chối nhận hàng</option>
+                            <option>Sai địa chỉ / số điện thoại</option>
+                            <option>Không liên lạc được người nhận</option>
+                        </select>
+                        <button class="btn btn-warning">Báo giao thất bại</button>
+                    </form>
+                </div>
+            </div>
+
+            <form th:if="${order.allows(act['CONFIRM_RETURNED'])}" th:action="@{/shipper/orders/{id}/returned(id=${order.id})}" method="post">
+                <p class="mb-2">Mang hàng trả lại shop <strong th:text="${order.shop.shopName}"></strong> và xác nhận.</p>
+                <button class="btn btn-dark">Xác nhận đã hoàn hàng cho shop</button>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/order :: info(${order})}"></div>
+    <div th:replace="~{fragments/order :: history(${history})}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

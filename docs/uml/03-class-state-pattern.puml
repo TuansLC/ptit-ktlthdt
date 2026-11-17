@@ -1,0 +1,60 @@
+@startuml class-state-pattern
+title State pattern - Vòng đời đơn hàng
+skinparam classAttributeIconSize 0
+hide empty members
+
+class Order {
+  - status : OrderStatus
+  + pickUp()
+  + deliverSuccess(amount)
+  + deliverFail(reason)
+  + ...()
+  ~ moveTo(next)
+}
+note right of Order
+  pickUp() { status.getState().pickUp(this); }
+  Order không chứa if/switch theo trạng thái.
+end note
+
+enum OrderStatus {
+  + getState() : OrderState
+}
+
+interface OrderState {
+  + allowedActions(order) : Set<OrderAction>
+  + assignShipper(order, shipper)
+  + cancel(order)
+  + pickUp(order)
+  + deliverSuccess(order, amount)
+  + deliverFail(order, reason)
+  + retryDelivery(order, shipper)
+  + startReturn(order)
+  + confirmReturned(order)
+}
+
+abstract class AbstractOrderState {
+  # reject(order, action)
+  # requireActiveShipper(shipper)
+}
+note bottom of AbstractOrderState
+  Mặc định mọi thao tác đều ném BusinessException.
+  Lớp con chỉ ghi đè thao tác hợp lệ ở trạng thái đó.
+end note
+
+class WaitingAssignmentState
+class WaitingPickupState
+class DeliveringState
+class FailedDeliveryState
+class ReturningState
+class FinalState
+
+Order --> OrderStatus
+OrderStatus --> OrderState
+OrderState <|.. AbstractOrderState
+AbstractOrderState <|-- WaitingAssignmentState
+AbstractOrderState <|-- WaitingPickupState
+AbstractOrderState <|-- DeliveringState
+AbstractOrderState <|-- FailedDeliveryState
+AbstractOrderState <|-- ReturningState
+AbstractOrderState <|-- FinalState
+@enduml

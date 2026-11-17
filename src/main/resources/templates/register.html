@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đăng ký shop')}"></head>
+<body>
+<main class="container py-5">
+    <div class="card shadow-sm mx-auto auth-card wide">
+        <div class="card-body p-4">
+            <h1 class="h4 mb-4">Đăng ký tài khoản shop</h1>
+            <div th:replace="~{fragments/layout :: flash}"></div>
+
+            <form th:action="@{/register}" th:object="${form}" method="post" novalidate>
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger">
+                    <div th:each="e : ${#fields.globalErrors()}" th:text="${e}"></div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input class="form-control" th:field="*{username}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{username}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Họ tên chủ shop</label>
+                        <input class="form-control" th:field="*{fullName}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mật khẩu</label>
+                        <input class="form-control" type="password" th:field="*{password}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{password}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nhập lại mật khẩu</label>
+                        <input class="form-control" type="password" th:field="*{confirmPassword}"
+                               th:classappend="${#fields.hasErrors('passwordConfirmed')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{passwordConfirmed}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input class="form-control" th:field="*{phone}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{phone}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Tên shop</label>
+                        <input class="form-control" th:field="*{shopName}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{shopName}"></div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Địa chỉ lấy hàng (số nhà, đường)</label>
+                        <input class="form-control" th:field="*{address}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{address}"></div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Phường</label>
+                        <select class="form-select" th:field="*{wardId}" th:errorclass="is-invalid">
+                            <option value="">-- Chọn phường --</option>
+                            <option th:each="w : ${wards}" th:value="${w.id}" th:text="${w.name}"></option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{wardId}"></div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <a th:href="@{/login}">← Quay lại đăng nhập</a>
+                    <button class="btn btn-primary">Đăng ký</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đơn hàng')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Đơn hàng của shop</h1>
+        <a class="btn btn-primary" th:href="@{/shop/orders/new}">+ Tạo đơn mới</a>
+    </div>
+
+    <form class="row g-2 mb-3" th:action="@{/shop/orders}" method="get">
+        <div class="col-md-3">
+            <select class="form-select" name="status">
+                <option value="">Tất cả trạng thái</option>
+                <option th:each="s : ${allStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}"></option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input class="form-control" name="keyword" th:value="${keyword}" placeholder="Mã đơn, tên hoặc SĐT người nhận">
+        </div>
+        <div class="col-md-2"><button class="btn btn-outline-primary w-100">Lọc</button></div>
+    </form>
+
+    <div th:replace="~{fragments/order :: table(${orders}, '/shop/orders', false)}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

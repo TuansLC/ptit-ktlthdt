@@ -1,0 +1,36 @@
+@startuml activity-delivery
+title Biểu đồ hoạt động - Quy trình giao một đơn hàng
+
+|Shop|
+start
+:Tạo đơn, hệ thống tính phí;
+|Quản trị viên|
+:Phân công shipper;
+|Shipper|
+:Đến lấy hàng tại shop;
+:Xác nhận đã lấy hàng;
+repeat
+  :Giao cho người nhận;
+  if (Giao được?) then (có)
+    :Thu tiền COD, nhập số tiền;
+    :Xác nhận giao thành công;
+    :Lập phiếu nộp COD;
+    |Quản trị viên|
+    :Xác nhận đã nhận tiền;
+    :Lập phiếu đối soát cho shop;
+    :Chuyển khoản, ghi nhận thanh toán;
+    stop
+  else (không)
+    |Shipper|
+    :Báo thất bại kèm lý do;
+    |Quản trị viên|
+  endif
+repeat while (Số lần thất bại < 3\nvà quyết định giao lại?) is (giao lại)
+-> chuyển hoàn;
+:Chuyển hoàn về shop;
+|Shipper|
+:Trả hàng cho shop, xác nhận đã hoàn;
+|Quản trị viên|
+:Đơn hoàn được đưa vào đối soát\n(shop chịu phí vận chuyển);
+stop
+@enduml

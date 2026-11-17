@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tiền COD')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Tiền thu hộ (COD)</h1>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">Đang giữ, chưa nộp</span>
+            <span class="fs-5 fw-semibold text-success" th:text="${@fmt.money(holding)}"></span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>Mã đơn</th><th>Người nhận</th><th>Giao lúc</th><th class="text-end">Đã thu</th></tr></thead>
+                    <tbody>
+                    <tr th:each="o : ${pendingOrders}">
+                        <td><a th:href="@{/shipper/orders/{id}(id=${o.id})}" th:text="${o.code}"></a></td>
+                        <td th:text="${o.receiverName}"></td>
+                        <td th:text="${@fmt.dateTime(o.deliveredAt)}"></td>
+                        <td class="text-end" th:text="${@fmt.money(o.collectedAmount)}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(pendingOrders)}"><td colspan="4" class="text-center text-muted">Không có tiền cần nộp</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <form th:unless="${#lists.isEmpty(pendingOrders)}" th:action="@{/shipper/cod/submit}" method="post"
+                  class="row g-2 align-items-end" onsubmit="return confirm('Lập phiếu nộp toàn bộ số tiền đang giữ?')">
+                <div class="col-md-8">
+                    <label class="form-label">Ghi chú</label>
+                    <input class="form-control" name="note" placeholder="Ví dụ: nộp tiền mặt tại kho Cầu Giấy">
+                </div>
+                <div class="col-md-4"><button class="btn btn-success w-100">Lập phiếu nộp tiền</button></div>
+            </form>
+        </div>
+    </div>
+
+    <h2 class="h5">Các phiếu đã nộp</h2>
+    <div class="table-responsive">
+        <table class="table bg-white align-middle">
+            <thead class="table-light"><tr><th>Mã phiếu</th><th>Ngày lập</th><th class="text-end">Số tiền</th><th>Trạng thái</th><th>Người duyệt</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${remittances}">
+                <td><a th:href="@{/shipper/cod/{id}(id=${r.id})}" th:text="${r.code}"></a></td>
+                <td th:text="${@fmt.dateTime(r.createdAt)}"></td>
+                <td class="text-end" th:text="${@fmt.money(r.totalAmount)}"></td>
+                <td><span class="badge" th:classappend="${'text-bg-' + r.statusBadge}" th:text="${r.statusLabel}"></span></td>
+                <td th:text="${r.reviewedBy ?: '—'}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(remittances)}"><td colspan="5" class="text-center text-muted py-4">Chưa có phiếu nào</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

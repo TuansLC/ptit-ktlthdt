@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Noi dung phieu nop COD, dung chung cho shipper va quan tri vien -->
+<div th:fragment="detail(r, orderBaseUrl)">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row row-cols-2 row-cols-md-4 g-3">
+                <div><div class="small text-muted">Shipper</div><div class="fw-semibold" th:text="${r.shipper.fullName}"></div></div>
+                <div><div class="small text-muted">Ngày lập</div><div th:text="${@fmt.dateTime(r.createdAt)}"></div></div>
+                <div><div class="small text-muted">Số tiền</div><div class="fs-5 fw-semibold" th:text="${@fmt.money(r.totalAmount)}"></div></div>
+                <div><div class="small text-muted">Trạng thái</div>
+                    <span class="badge" th:classappend="${'text-bg-' + r.statusBadge}" th:text="${r.statusLabel}"></span></div>
+                <div th:if="${r.reviewedBy}"><div class="small text-muted">Người duyệt</div><div th:text="${r.reviewedBy}"></div></div>
+                <div th:if="${r.reviewedAt}"><div class="small text-muted">Duyệt lúc</div><div th:text="${@fmt.dateTime(r.reviewedAt)}"></div></div>
+                <div th:if="${r.note}" class="col-12"><div class="small text-muted">Ghi chú</div><div th:text="${r.note}"></div></div>
+            </div>
+        </div>
+    </div>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(r.orders)}">
+        <table class="table table-sm bg-white">
+            <thead class="table-light"><tr><th>Mã đơn</th><th>Shop</th><th>Người nhận</th><th>Giao lúc</th><th class="text-end">Đã thu</th></tr></thead>
+            <tbody>
+            <tr th:each="o : ${r.orders}">
+                <td><a th:href="@{${orderBaseUrl + '/' + o.id}}" th:text="${o.code}"></a></td>
+                <td th:text="${o.shop.shopName}"></td>
+                <td th:text="${o.receiverName}"></td>
+                <td th:text="${@fmt.dateTime(o.deliveredAt)}"></td>
+                <td class="text-end" th:text="${@fmt.money(o.collectedAmount)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

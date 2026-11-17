@@ -1,0 +1,47 @@
+@startuml sequence-create-order
+title Biểu đồ tuần tự - Shop tạo đơn giao hàng
+autonumber
+
+actor Shop
+boundary "order-form.html" as UI
+control ShopController
+control OrderService
+control PricingService
+participant ShippingFeeStrategyFactory as Factory
+participant "strategy :\nShippingFeeStrategy" as Strategy
+entity "order : Order" as Order
+participant ApplicationEventPublisher as Publisher
+control OrderHistoryRecorder as Recorder
+database DB
+
+Shop -> UI : nhập thông tin người nhận,\nkhối lượng, COD, dịch vụ
+UI -> ShopController : POST /shop/orders (OrderForm)
+ShopController -> ShopController : kiểm tra @Valid
+alt dữ liệu không hợp lệ
+  ShopController --> UI : hiển thị lỗi từng trường
+else hợp lệ
+  ShopController -> OrderService : createOrder(shopId, form)
+  OrderService -> DB : tìm Shop, Ward lấy, Ward giao
+  OrderService -> PricingService : quote(pickupWard, deliveryWard, weight, type)
+  PricingService -> DB : tìm PriceConfig theo dịch vụ
+  PricingService -> Factory : get(type)
+  Factory --> PricingService : strategy
+  PricingService -> Strategy : calculate(request, config)
+  alt phường ngoài phạm vi / quá khối lượng / hỏa tốc khác vùng
+    Strategy --> OrderService : BusinessException
+    OrderService --> ShopController : BusinessException
+    ShopController --> UI : hiển thị thông báo lỗi
+  else
+    Strategy --> PricingService : FeeQuote
+    PricingService --> OrderService : FeeQuote
+    OrderService -> Order ** : new Order(..., fee)\nstatus = CHO_PHAN_CONG
+    OrderService -> DB : save(order)
+    OrderService -> Order : assignCode()
+    OrderService -> Publisher : publish(OrderStatusChangedEvent)
+    Publisher -> Recorder : onStatusChanged(event)
+    Recorder -> DB : save(OrderStatusHistory)
+    OrderService --> ShopController : order
+    ShopController --> UI : chuyển tới chi tiết đơn\n"Đã tạo đơn GH..., phí ..."
+  end
+end
+@enduml

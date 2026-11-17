@@ -1,0 +1,115 @@
+@startuml erd
+title Biểu đồ quan hệ thực thể (ERD)
+hide circle
+skinparam linetype ortho
+
+entity users {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(50) <<UNIQUE>>
+  * password_hash : VARCHAR(255)
+  * full_name : VARCHAR(100)
+  phone : VARCHAR(20)
+  active : BOOLEAN
+  created_at : DATETIME
+}
+entity shops {
+  * id : BIGINT <<PK, FK users>>
+  --
+  * shop_name : VARCHAR(150)
+  * address : VARCHAR(255)
+  * ward_id : BIGINT <<FK>>
+  bank_name, bank_account_no, bank_account_holder
+}
+entity shippers {
+  * id : BIGINT <<PK, FK users>>
+  --
+  vehicle_plate : VARCHAR(20)
+  zone_id : BIGINT <<FK>>
+}
+entity admins {
+  * id : BIGINT <<PK, FK users>>
+}
+entity delivery_zones {
+  * id : BIGINT <<PK>>
+  --
+  * code : VARCHAR(10) <<UNIQUE>>
+  * name : VARCHAR(100)
+  description : VARCHAR(255)
+}
+entity wards {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<UNIQUE>>
+  zone_id : BIGINT <<FK>>
+}
+entity price_configs {
+  * id : BIGINT <<PK>>
+  --
+  * service_type : VARCHAR(20) <<UNIQUE>>
+  same_zone_fee, cross_zone_fee : BIGINT
+  included_weight_gram, step_weight_gram, max_weight_gram : INT
+  extra_fee_per_step, surcharge : BIGINT
+}
+entity orders {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UNIQUE>>
+  version : BIGINT
+  * shop_id : BIGINT <<FK>>
+  * pickup_address, pickup_ward_id <<FK>>
+  * receiver_name, receiver_phone, receiver_address
+  * delivery_ward_id : BIGINT <<FK>>
+  * item_description, weight_gram, cod_amount
+  * service_type, shipping_fee
+  * status : VARCHAR(20)
+  shipper_id : BIGINT <<FK>>
+  failed_attempts, last_fail_reason
+  collected_amount, delivered_at
+  cod_remittance_id : BIGINT <<FK>>
+  settlement_id : BIGINT <<FK>>
+  created_at, updated_at
+}
+entity order_status_histories {
+  * id : BIGINT <<PK>>
+  --
+  * order_id : BIGINT <<FK>>
+  from_status, to_status : VARCHAR(20)
+  actor_name, actor_role, note
+  created_at : DATETIME
+}
+entity cod_remittances {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UNIQUE>>
+  * shipper_id : BIGINT <<FK>>
+  total_amount : BIGINT
+  status : VARCHAR(20)
+  reviewed_by, reviewed_at, note, created_at
+}
+entity settlements {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UNIQUE>>
+  * shop_id : BIGINT <<FK>>
+  total_cod, total_fee, payout_amount : BIGINT
+  status : VARCHAR(20)
+  bank_name, bank_account_no, bank_account_holder
+  payment_ref, paid_at, note, created_at
+}
+
+users ||--o| shops
+users ||--o| shippers
+users ||--o| admins
+delivery_zones |o--o{ wards
+delivery_zones |o--o{ shippers
+wards ||--o{ shops
+shops ||--o{ orders
+shippers |o--o{ orders
+wards ||--o{ orders : pickup / delivery
+orders ||--o{ order_status_histories
+shippers ||--o{ cod_remittances
+cod_remittances |o--o{ orders
+shops ||--o{ settlements
+settlements |o--o{ orders
+@enduml

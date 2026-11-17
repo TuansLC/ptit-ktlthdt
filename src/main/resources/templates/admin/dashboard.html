@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thống kê')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+        <h1 class="h4 mb-0">Thống kê</h1>
+        <form class="d-flex gap-2 align-items-end" th:action="@{/admin}" method="get">
+            <div><label class="form-label small mb-0">Từ ngày</label>
+                <input class="form-control form-control-sm" type="date" name="from" th:value="${stats.from}"></div>
+            <div><label class="form-label small mb-0">Đến ngày</label>
+                <input class="form-control form-control-sm" type="date" name="to" th:value="${stats.to}"></div>
+            <button class="btn btn-sm btn-primary">Xem</button>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Doanh thu phí vận chuyển trong kỳ</div>
+            <div class="value text-primary" th:text="${@fmt.money(stats.revenueInPeriod)}"></div></div></div></div>
+        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Giao thành công / Hoàn trong kỳ</div>
+            <div class="value" th:text="${stats.deliveredInPeriod + ' / ' + stats.returnedInPeriod}"></div></div></div></div>
+        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Tỷ lệ giao thành công</div>
+            <div class="value text-success" th:text="${#numbers.formatDecimal(stats.successRate(), 1, 1) + ' %'}"></div></div></div></div>
+        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
+            <div class="text-muted small">Tổng số đơn</div>
+            <div class="value" th:text="${stats.totalOrders}"></div></div></div></div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <a class="text-decoration-none" th:href="@{/admin/remittances}">
+                <div class="alert mb-0" th:classappend="${stats.pendingRemittances > 0 ? 'alert-warning' : 'alert-light'}">
+                    Phiếu nộp COD chờ xác nhận: <strong th:text="${stats.pendingRemittances}"></strong>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a class="text-decoration-none" th:href="@{/admin/settlements}">
+                <div class="alert mb-0" th:classappend="${stats.unpaidSettlements > 0 ? 'alert-warning' : 'alert-light'}">
+                    Phiếu đối soát chưa thanh toán: <strong th:text="${stats.unpaidSettlements}"></strong>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <h2 class="h5">Đơn hàng theo trạng thái (hiện tại)</h2>
+    <div class="row g-3">
+        <div class="col-6 col-md-3" th:each="s : ${allStatuses}">
+            <a class="text-decoration-none" th:href="@{/admin/orders(status=${s})}">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <span th:replace="~{fragments/order :: status(${s})}"></span>
+                        <div class="value mt-2 text-body" th:text="${stats.countByStatus.get(s)}">0</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

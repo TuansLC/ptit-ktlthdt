@@ -1,0 +1,29 @@
+@startuml state-order
+title Biểu đồ trạng thái - Đơn hàng
+
+[*] --> CHO_PHAN_CONG : Shop tạo đơn
+
+state "Chờ phân công" as CHO_PHAN_CONG
+state "Chờ lấy hàng" as CHO_LAY_HANG
+state "Đang giao" as DANG_GIAO
+state "Giao thất bại" as GIAO_THAT_BAI
+state "Đang hoàn" as DANG_HOAN
+state "Giao thành công" as GIAO_THANH_CONG
+state "Đã hoàn" as DA_HOAN
+state "Đã hủy" as DA_HUY
+
+CHO_PHAN_CONG --> CHO_LAY_HANG : Admin phân công shipper
+CHO_PHAN_CONG --> DA_HUY : Shop hủy
+CHO_LAY_HANG --> CHO_LAY_HANG : Admin đổi shipper
+CHO_LAY_HANG --> DA_HUY : Shop hủy
+CHO_LAY_HANG --> DANG_GIAO : Shipper xác nhận đã lấy hàng
+DANG_GIAO --> GIAO_THANH_CONG : Shipper giao thành công\n[số tiền thu = tiền COD]
+DANG_GIAO --> GIAO_THAT_BAI : Shipper báo thất bại\n[có lý do] / failedAttempts++
+GIAO_THAT_BAI --> DANG_GIAO : Admin cho giao lại\n[failedAttempts < 3]
+GIAO_THAT_BAI --> DANG_HOAN : Admin chuyển hoàn
+DANG_HOAN --> DA_HOAN : Shipper trả hàng cho shop
+
+GIAO_THANH_CONG --> [*]
+DA_HOAN --> [*]
+DA_HUY --> [*]
+@enduml

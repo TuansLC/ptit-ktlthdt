@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đăng nhập')}"></head>
+<body>
+<main class="container py-5">
+    <div class="card shadow-sm mx-auto auth-card">
+        <div class="card-body p-4">
+            <h1 class="h4 mb-1 text-center">🚚 Giao hàng Hà Nội</h1>
+            <p class="text-center text-muted mb-4">Quản lý giao hàng nội thành và đối soát COD</p>
+
+            <div th:replace="~{fragments/layout :: flash}"></div>
+            <div th:if="${param.error}" class="alert alert-danger">Sai tên đăng nhập, mật khẩu, hoặc tài khoản đã bị khóa</div>
+            <div th:if="${param.logout}" class="alert alert-info">Đã đăng xuất</div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label class="form-label" for="username">Tên đăng nhập</label>
+                    <input class="form-control" id="username" name="username" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="password">Mật khẩu</label>
+                    <input class="form-control" id="password" name="password" type="password" required>
+                </div>
+                <button class="btn btn-primary w-100">Đăng nhập</button>
+            </form>
+            <p class="text-center mt-3 mb-0">Chưa có tài khoản shop? <a th:href="@{/register}">Đăng ký</a></p>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý đơn hàng')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container-fluid px-4 py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Quản lý đơn hàng</h1>
+
+    <form class="row g-2 mb-3" th:action="@{/admin/orders}" method="get">
+        <div class="col-md-2">
+            <select class="form-select" name="status">
+                <option value="">Tất cả trạng thái</option>
+                <option th:each="s : ${allStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" name="shopId">
+                <option value="">Tất cả shop</option>
+                <option th:each="s : ${shops}" th:value="${s.id}" th:text="${s.shopName}" th:selected="${s.id == shopId}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" name="shipperId">
+                <option value="">Tất cả shipper</option>
+                <option th:each="s : ${shippers}" th:value="${s.id}" th:text="${s.fullName}" th:selected="${s.id == shipperId}"></option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input class="form-control" name="keyword" th:value="${keyword}" placeholder="Mã đơn, tên hoặc SĐT người nhận">
+        </div>
+        <div class="col-md-1"><button class="btn btn-outline-primary w-100">Lọc</button></div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle bg-white">
+            <thead class="table-light">
+            <tr>
+                <th>Mã đơn</th><th>Ngày tạo</th><th>Shop</th><th>Lấy tại</th><th>Giao đến</th>
+                <th class="text-end">Thu hộ</th><th class="text-end">Phí</th><th>Dịch vụ</th><th>Trạng thái</th><th>Shipper</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${orders}">
+                <td><a class="fw-semibold" th:href="@{/admin/orders/{id}(id=${o.id})}" th:text="${o.code}"></a></td>
+                <td class="small" th:text="${@fmt.dateTime(o.createdAt)}"></td>
+                <td th:text="${o.shop.shopName}"></td>
+                <td th:text="${o.pickupWard.name + ' (' + (o.pickupWard.zone != null ? o.pickupWard.zone.code : '-') + ')'}"></td>
+                <td th:text="${o.deliveryWard.name + ' (' + (o.deliveryWard.zone != null ? o.deliveryWard.zone.code : '-') + ')'}"></td>
+                <td class="text-end" th:text="${@fmt.money(o.codAmount)}"></td>
+                <td class="text-end" th:text="${@fmt.money(o.shippingFee)}"></td>
+                <td th:text="${o.serviceType.label}"></td>
+                <td><span th:replace="~{fragments/order :: status(${o.status})}"></span></td>
+                <td>
+                    <form th:if="${o.status.name() == 'CHO_PHAN_CONG'}" class="d-flex gap-1"
+                          th:action="@{/admin/orders/{id}/assign(id=${o.id})}" method="post">
+                        <input type="hidden" name="back" value="list">
+                        <select class="form-select form-select-sm" name="shipperId" required>
+                            <option value="">Chọn shipper</option>
+                            <option th:each="s : ${activeShippers}" th:value="${s.id}"
+                                    th:text="${s.fullName + (s.zone != null ? ' (' + s.zone.code + ')' : '')}"></option>
+                        </select>
+                        <button class="btn btn-sm btn-primary">Giao</button>
+                    </form>
+                    <span th:unless="${o.status.name() == 'CHO_PHAN_CONG'}"
+                          th:text="${o.shipper != null ? o.shipper.fullName : '—'}"></span>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(orders)}"><td colspan="10" class="text-center text-muted py-4">Không có đơn hàng nào</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

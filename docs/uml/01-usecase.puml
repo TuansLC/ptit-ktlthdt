@@ -1,0 +1,59 @@
+@startuml usecase
+title Biểu đồ use case tổng quát - Hệ thống quản lý giao hàng nội thành Hà Nội
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Shop" as Shop
+actor "Shipper" as Shipper
+actor "Quản trị viên" as Admin
+
+rectangle "Hệ thống giao hàng" {
+  usecase "Đăng nhập / Đăng xuất" as UC_Login
+  usecase "Đăng ký tài khoản shop" as UC_Register
+  usecase "Cập nhật thông tin shop\nvà tài khoản ngân hàng" as UC_Profile
+  usecase "Tạo đơn giao hàng" as UC_CreateOrder
+  usecase "Tính phí vận chuyển" as UC_Quote
+  usecase "Tra cứu, theo dõi đơn" as UC_TrackOrder
+  usecase "Hủy đơn" as UC_Cancel
+  usecase "Xem phiếu đối soát" as UC_ViewSettlement
+
+  usecase "Xem đơn được phân công" as UC_MyOrders
+  usecase "Cập nhật trạng thái giao hàng" as UC_UpdateStatus
+  usecase "Xác nhận tiền COD đã thu" as UC_Collect
+  usecase "Lập phiếu nộp tiền COD" as UC_Remit
+
+  usecase "Quản lý tài khoản shop, shipper" as UC_Accounts
+  usecase "Quản lý vùng giao hàng" as UC_Zones
+  usecase "Quản lý bảng giá cước" as UC_Prices
+  usecase "Phân công shipper" as UC_Assign
+  usecase "Xử lý đơn thất bại / hoàn" as UC_Failed
+  usecase "Xác nhận phiếu nộp COD" as UC_ConfirmRemit
+  usecase "Lập phiếu đối soát\nvà thanh toán cho shop" as UC_Settle
+  usecase "Thống kê" as UC_Stats
+}
+
+Shop --> UC_Register
+Shop --> UC_Login
+Shop --> UC_Profile
+Shop --> UC_CreateOrder
+Shop --> UC_TrackOrder
+Shop --> UC_Cancel
+Shop --> UC_ViewSettlement
+UC_CreateOrder ..> UC_Quote : <<include>>
+
+Shipper --> UC_Login
+Shipper --> UC_MyOrders
+Shipper --> UC_UpdateStatus
+Shipper --> UC_Remit
+UC_Collect .> UC_UpdateStatus : <<extend>>
+
+Admin --> UC_Login
+Admin --> UC_Accounts
+Admin --> UC_Zones
+Admin --> UC_Prices
+Admin --> UC_Assign
+Admin --> UC_Failed
+Admin --> UC_ConfirmRemit
+Admin --> UC_Settle
+Admin --> UC_Stats
+@enduml

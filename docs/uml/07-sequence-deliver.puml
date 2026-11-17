@@ -1,0 +1,40 @@
+@startuml sequence-deliver
+title Biểu đồ tuần tự - Shipper xác nhận giao thành công
+autonumber
+
+actor Shipper
+boundary "shipper/order-detail.html" as UI
+control ShipperController
+control OrderService
+entity "order : Order" as Order
+participant "DeliveringState" as State
+participant ApplicationEventPublisher as Publisher
+control OrderHistoryRecorder as Recorder
+database DB
+
+Shipper -> UI : nhập số tiền đã thu
+UI -> ShipperController : POST /shipper/orders/{id}/success
+ShipperController -> OrderService : deliverSuccess(shipperId, orderId, amount)
+OrderService -> DB : tìm order
+OrderService -> OrderService : kiểm tra order.isAssignedTo(shipper)
+alt không phải đơn của shipper
+  OrderService --> ShipperController : NotFoundException
+  ShipperController --> UI : trang 404
+else
+  OrderService -> Order : deliverSuccess(amount)
+  Order -> State : status.getState().deliverSuccess(this, amount)
+  alt amount != codAmount
+    State --> OrderService : BusinessException
+    OrderService --> ShipperController : rollback
+    ShipperController --> UI : "Số tiền thu hộ phải đúng ..."
+  else
+    State -> Order : markDelivered(amount)
+    State -> Order : moveTo(GIAO_THANH_CONG)
+    OrderService -> Publisher : publish(OrderStatusChangedEvent)
+    Publisher -> Recorder : onStatusChanged(event)
+    Recorder -> DB : save(OrderStatusHistory)
+    OrderService --> ShipperController : (commit)
+    ShipperController --> UI : "Đã giao thành công"
+  end
+end
+@enduml

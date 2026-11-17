@@ -1,0 +1,168 @@
+@startuml class-domain
+title Biểu đồ lớp - Tầng domain
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "user" {
+  abstract class User {
+    - id : Long
+    - username : String
+    - passwordHash : String
+    - fullName : String
+    - phone : String
+    - active : boolean
+    + {abstract} getRole() : Role
+    + updateContact(fullName, phone)
+    + activate()
+    + deactivate()
+  }
+  class Shop {
+    - shopName : String
+    - address : String
+    - bankName : String
+    - bankAccountNo : String
+    - bankAccountHolder : String
+    + getRole() : Role
+    + updateProfile(shopName, address, ward)
+    + updateBankAccount(bank, no, holder)
+    + hasBankAccount() : boolean
+  }
+  class Shipper {
+    - vehiclePlate : String
+    + getRole() : Role
+  }
+  class Admin {
+    + getRole() : Role
+  }
+  enum Role {
+    SHOP
+    SHIPPER
+    ADMIN
+    + getHomeUrl() : String
+  }
+  User <|-- Shop
+  User <|-- Shipper
+  User <|-- Admin
+  User ..> Role
+}
+
+package "zone" {
+  class DeliveryZone {
+    - code : String
+    - name : String
+    + sameAs(other) : boolean
+  }
+  class Ward {
+    - name : String
+    + isServed() : boolean
+    + assignZone(zone)
+    + removeFromService()
+  }
+  Ward "*" --> "0..1" DeliveryZone : zone
+}
+Shop "*" --> "1" Ward : ward
+Shipper "*" --> "0..1" DeliveryZone : vùng phụ trách
+
+package "order" {
+  class Order {
+    + {static} MAX_DELIVERY_ATTEMPTS = 3
+    - code : String
+    - receiverName, receiverPhone, receiverAddress : String
+    - itemDescription : String
+    - weightGram : int
+    - codAmount : long
+    - shippingFee : long
+    - status : OrderStatus
+    - failedAttempts : int
+    - collectedAmount : long
+    + assignShipper(shipper)
+    + cancel()
+    + pickUp()
+    + deliverSuccess(collectedAmount)
+    + deliverFail(reason)
+    + retryDelivery(shipper)
+    + startReturn()
+    + confirmReturned()
+    + allowedActions() : Set<OrderAction>
+    + isCodPendingRemittance() : boolean
+    + isReadyForSettlement() : boolean
+    + settlementCod() : long
+    ~ moveTo(next : OrderStatus)
+    ~ setShipper(shipper)
+    ~ markDelivered(amount)
+    ~ recordFailedAttempt(reason)
+  }
+  class OrderStatusHistory {
+    - fromStatus : OrderStatus
+    - toStatus : OrderStatus
+    - actorName : String
+    - note : String
+    - createdAt : LocalDateTime
+  }
+  enum OrderStatus {
+    CHO_PHAN_CONG
+    CHO_LAY_HANG
+    DANG_GIAO
+    GIAO_THAT_BAI
+    DANG_HOAN
+    GIAO_THANH_CONG
+    DA_HOAN
+    DA_HUY
+    + getState() : OrderState
+  }
+  Order --> OrderStatus
+  OrderStatusHistory "*" --> "1" Order
+}
+Order "*" --> "1" Shop
+Order "*" --> "0..1" Shipper
+Order "*" --> "1" Ward : pickupWard
+Order "*" --> "1" Ward : deliveryWard
+
+package "finance" {
+  abstract class Voucher {
+    - code : String
+    - createdAt : LocalDateTime
+    - note : String
+    # {abstract} codePrefix() : String
+    + {abstract} getAmount() : long
+    + {abstract} getStatusLabel() : String
+    + assignCode()
+  }
+  class CodRemittance {
+    - totalAmount : long
+    - status : RemittanceStatus
+    + confirm(reviewer)
+    + reject(reviewer, reason)
+    + isConfirmed() : boolean
+  }
+  class Settlement {
+    - totalCod : long
+    - totalFee : long
+    - payoutAmount : long
+    - status : SettlementStatus
+    + markPaid(paymentRef)
+    + isShopOwing() : boolean
+  }
+  Voucher <|-- CodRemittance
+  Voucher <|-- Settlement
+}
+CodRemittance "1" --> "*" Shipper
+CodRemittance "0..1" -- "*" Order : gồm các đơn >
+Settlement "*" --> "1" Shop
+Settlement "0..1" -- "*" Order : gồm các đơn >
+
+package "pricing" {
+  class PriceConfig {
+    - serviceType : ServiceType
+    - sameZoneFee, crossZoneFee : long
+    - includedWeightGram, stepWeightGram, maxWeightGram : int
+    - extraFeePerStep, surcharge : long
+    + update(...)
+  }
+  enum ServiceType {
+    TIEU_CHUAN
+    HOA_TOC
+  }
+}
+Order --> ServiceType
+@enduml

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý shipper')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Shipper</h1>
+
+    <div class="table-responsive mb-4">
+        <table class="table bg-white align-middle">
+            <thead class="table-light">
+            <tr><th>Tên đăng nhập</th><th>Họ tên</th><th>SĐT</th><th>Biển số</th><th>Vùng phụ trách</th>
+                <th class="text-end">COD đang giữ</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shippers}">
+                <td th:text="${s.username}"></td>
+                <td><a th:href="@{/admin/orders(shipperId=${s.id})}" th:text="${s.fullName}"></a></td>
+                <td th:text="${s.phone}"></td>
+                <td th:text="${s.vehiclePlate}"></td>
+                <td th:text="${s.zone != null ? s.zone.name : '—'}"></td>
+                <td class="text-end" th:text="${@fmt.money(holding.get(s.id))}"></td>
+                <td>
+                    <span th:if="${s.active}" class="badge text-bg-success">Hoạt động</span>
+                    <span th:unless="${s.active}" class="badge text-bg-secondary">Đã khóa</span>
+                </td>
+                <td>
+                    <form th:action="@{/admin/users/{id}/active(id=${s.id})}" method="post">
+                        <input type="hidden" name="active" th:value="${!s.active}">
+                        <button class="btn btn-sm" th:classappend="${s.active ? 'btn-outline-danger' : 'btn-outline-success'}"
+                                th:text="${s.active ? 'Khóa' : 'Mở khóa'}"></button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header fw-semibold">Thêm shipper</div>
+        <div class="card-body">
+            <form th:action="@{/admin/shippers}" th:object="${form}" method="post" class="row g-3" novalidate>
+                <div class="col-md-4">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input class="form-control" th:field="*{username}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{username}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Mật khẩu</label>
+                    <input class="form-control" type="password" th:field="*{password}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{password}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Họ tên</label>
+                    <input class="form-control" th:field="*{fullName}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Số điện thoại</label>
+                    <input class="form-control" th:field="*{phone}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{phone}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Biển số xe</label>
+                    <input class="form-control" th:field="*{vehiclePlate}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Vùng phụ trách</label>
+                    <select class="form-select" th:field="*{zoneId}">
+                        <option value="">-- Không cố định --</option>
+                        <option th:each="z : ${zones}" th:value="${z.id}" th:text="${z.name}"></option>
+                    </select>
+                </div>
+                <div class="col-12"><button class="btn btn-primary">Thêm shipper</button></div>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

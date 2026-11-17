@@ -1,0 +1,69 @@
+@startuml class-strategy-pattern
+title Strategy + Template Method + Factory - Tính phí vận chuyển
+skinparam classAttributeIconSize 0
+hide empty members
+
+class PricingService {
+  + quote(pickupWard, deliveryWard, weight, type) : FeeQuote
+}
+
+class ShippingFeeStrategyFactory {
+  - strategies : Map<ServiceType, ShippingFeeStrategy>
+  + get(type : ServiceType) : ShippingFeeStrategy
+}
+
+interface ShippingFeeStrategy {
+  + getServiceType() : ServiceType
+  + calculate(request : FeeRequest, config : PriceConfig) : FeeQuote
+}
+
+abstract class AbstractShippingFeeStrategy {
+  + <<final>> calculate(request, config) : FeeQuote
+  # weightFee(weightGram, config) : long
+  # validateSpecific(request, config)
+  # {abstract} surcharge(request, config) : long
+}
+note right of AbstractShippingFeeStrategy
+  Template method calculate():
+  1. kiểm tra chung (phường được phục vụ, khối lượng)
+  2. validateSpecific()   <- hook
+  3. cước cơ bản theo cùng vùng / khác vùng
+  4. weightFee()
+  5. surcharge()          <- hook
+end note
+
+class StandardFeeStrategy {
+  + getServiceType() = TIEU_CHUAN
+  # surcharge() = 0
+}
+class ExpressFeeStrategy {
+  + getServiceType() = HOA_TOC
+  # validateSpecific() : chỉ nhận cùng vùng
+  # surcharge() = config.surcharge
+}
+
+class FeeRequest <<record>> {
+  pickupWard : Ward
+  deliveryWard : Ward
+  weightGram : int
+  serviceType : ServiceType
+  + isSameZone() : boolean
+}
+class FeeQuote <<record>> {
+  baseFee : long
+  weightFee : long
+  surcharge : long
+  + total() : long
+}
+class PriceConfig
+
+PricingService --> ShippingFeeStrategyFactory
+PricingService ..> PriceConfig
+ShippingFeeStrategyFactory o--> "*" ShippingFeeStrategy
+ShippingFeeStrategy <|.. AbstractShippingFeeStrategy
+AbstractShippingFeeStrategy <|-- StandardFeeStrategy
+AbstractShippingFeeStrategy <|-- ExpressFeeStrategy
+ShippingFeeStrategy ..> FeeRequest
+ShippingFeeStrategy ..> FeeQuote
+ShippingFeeStrategy ..> PriceConfig
+@enduml

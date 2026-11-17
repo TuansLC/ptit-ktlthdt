@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Phiếu đối soát')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Phiếu đối soát <span th:text="${settlement.code}"></span></h1>
+        <a class="btn btn-outline-secondary" th:href="@{/shop/settlements}">← Danh sách</a>
+    </div>
+    <div th:replace="~{fragments/settlement :: detail(${settlement}, '/shop/orders')}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

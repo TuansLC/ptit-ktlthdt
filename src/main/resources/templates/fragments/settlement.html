@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Noi dung phieu doi soat, dung chung cho shop va quan tri vien. orderBaseUrl: link chi tiet don -->
+<div th:fragment="detail(s, orderBaseUrl)">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row row-cols-2 row-cols-md-4 g-3">
+                <div><div class="small text-muted">Shop</div><div class="fw-semibold" th:text="${s.shop.shopName}"></div></div>
+                <div><div class="small text-muted">Ngày lập</div><div th:text="${@fmt.dateTime(s.createdAt)}"></div></div>
+                <div><div class="small text-muted">Trạng thái</div>
+                    <span class="badge" th:classappend="${'text-bg-' + s.statusBadge}" th:text="${s.statusLabel}"></span></div>
+                <div><div class="small text-muted">Số đơn</div><div th:text="${#lists.size(s.orders)}"></div></div>
+                <div><div class="small text-muted">Tổng tiền thu hộ</div><div th:text="${@fmt.money(s.totalCod)}"></div></div>
+                <div><div class="small text-muted">Tổng phí vận chuyển</div><div th:text="${'-' + @fmt.money(s.totalFee)}"></div></div>
+                <div>
+                    <div class="small text-muted" th:text="${s.shopOwing ? 'Shop cần thanh toán' : 'Tiền trả shop'}"></div>
+                    <div class="fs-5 fw-semibold" th:classappend="${s.shopOwing ? 'text-danger' : 'text-success'}"
+                         th:text="${@fmt.money(s.shopOwing ? -s.payoutAmount : s.payoutAmount)}"></div>
+                </div>
+                <div><div class="small text-muted">Tài khoản nhận</div>
+                    <div th:text="${s.bankAccountNo != null ? s.bankName + ' - ' + s.bankAccountNo + ' - ' + s.bankAccountHolder : 'Chưa có'}"></div></div>
+                <div th:if="${s.paidAt}"><div class="small text-muted">Thanh toán lúc</div><div th:text="${@fmt.dateTime(s.paidAt)}"></div></div>
+                <div th:if="${s.paymentRef}"><div class="small text-muted">Mã giao dịch</div><div th:text="${s.paymentRef}"></div></div>
+                <div th:if="${s.note}" class="col-12"><div class="small text-muted">Ghi chú</div><div th:text="${s.note}"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm bg-white align-middle">
+            <thead class="table-light">
+            <tr><th>Mã đơn</th><th>Người nhận</th><th>Kết quả</th>
+                <th class="text-end">Thu hộ</th><th class="text-end">Phí ship</th><th class="text-end">Thành tiền</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${s.orders}">
+                <td><a th:href="@{${orderBaseUrl + '/' + o.id}}" th:text="${o.code}"></a></td>
+                <td th:text="${o.receiverName}"></td>
+                <td><span th:replace="~{fragments/order :: status(${o.status})}"></span></td>
+                <td class="text-end" th:text="${@fmt.money(o.settlementCod())}"></td>
+                <td class="text-end" th:text="${'-' + @fmt.money(o.shippingFee)}"></td>
+                <td class="text-end" th:text="${@fmt.money(o.settlementCod() - o.shippingFee)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Bảng giá cước')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-1">Bảng giá cước</h1>
+    <p class="text-muted">
+        Phí = cước cơ bản (theo tuyến cùng vùng / khác vùng) + cước vượt cân + phụ phí dịch vụ.
+        Cước vượt cân tính theo từng bước khối lượng, làm tròn lên.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-lg-6" th:each="entry : ${forms}">
+            <div class="card h-100">
+                <div class="card-header">
+                    <span class="fw-semibold" th:text="${entry.key.label}"></span>
+                    <div class="small text-muted" th:text="${entry.key.description}"></div>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/prices/{t}(t=${entry.key})}" method="post" class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small">Cước cùng vùng (đ)</label>
+                            <input class="form-control" type="number" min="0" name="sameZoneFee" th:value="${entry.value.sameZoneFee}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Cước khác vùng (đ)</label>
+                            <input class="form-control" type="number" min="0" name="crossZoneFee" th:value="${entry.value.crossZoneFee}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Khối lượng tính trong cước cơ bản (g)</label>
+                            <input class="form-control" type="number" min="0" name="includedWeightGram" th:value="${entry.value.includedWeightGram}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Khối lượng tối đa (g)</label>
+                            <input class="form-control" type="number" min="1" name="maxWeightGram" th:value="${entry.value.maxWeightGram}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Bước vượt cân (g)</label>
+                            <input class="form-control" type="number" min="1" name="stepWeightGram" th:value="${entry.value.stepWeightGram}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Phí mỗi bước vượt (đ)</label>
+                            <input class="form-control" type="number" min="0" name="extraFeePerStep" th:value="${entry.value.extraFeePerStep}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small">Phụ phí dịch vụ (đ)</label>
+                            <input class="form-control" type="number" min="0" name="surcharge" th:value="${entry.value.surcharge}" required>
+                        </div>
+                        <div class="col-12"><button class="btn btn-primary">Lưu bảng giá</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chi tiết đơn')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Đơn <span th:text="${order.code}"></span></h1>
+        <a class="btn btn-outline-secondary" th:href="@{/admin/orders}">← Danh sách</a>
+    </div>
+
+    <div class="card mb-3 border-primary"
+         th:if="${order.allows(act['ASSIGN']) or order.allows(act['RETRY']) or order.allows(act['START_RETURN'])}">
+        <div class="card-header fw-semibold">Điều phối</div>
+        <div class="card-body d-flex flex-wrap gap-4">
+            <form th:if="${order.allows(act['ASSIGN'])}" class="d-flex gap-2 align-items-end"
+                  th:action="@{/admin/orders/{id}/assign(id=${order.id})}" method="post">
+                <div>
+                    <label class="form-label" th:text="${order.shipper == null ? 'Phân công shipper' : 'Đổi shipper'}"></label>
+                    <select class="form-select" name="shipperId" required>
+                        <option value="">-- Chọn shipper --</option>
+                        <option th:each="s : ${activeShippers}" th:value="${s.id}"
+                                th:text="${s.fullName + (s.zone != null ? ' - ' + s.zone.name : '')}"
+                                th:selected="${order.shipper != null and order.shipper.id == s.id}"></option>
+                    </select>
+                </div>
+                <button class="btn btn-primary">Lưu</button>
+            </form>
+
+            <form th:if="${order.allows(act['RETRY'])}" class="d-flex gap-2 align-items-end"
+                  th:action="@{/admin/orders/{id}/retry(id=${order.id})}" method="post">
+                <div>
+                    <label class="form-label">Giao lại (lần <span th:text="${order.failedAttempts + 1}"></span>)</label>
+                    <select class="form-select" name="shipperId" required>
+                        <option th:each="s : ${activeShippers}" th:value="${s.id}" th:text="${s.fullName}"
+                                th:selected="${order.shipper != null and order.shipper.id == s.id}"></option>
+                    </select>
+                </div>
+                <button class="btn btn-warning">Giao lại</button>
+            </form>
+
+            <form th:if="${order.allows(act['START_RETURN'])}" class="d-flex align-items-end"
+                  th:action="@{/admin/orders/{id}/return(id=${order.id})}" method="post"
+                  onsubmit="return confirm('Chuyển hoàn đơn này về shop?')">
+                <button class="btn btn-dark">Chuyển hoàn về shop</button>
+            </form>
+        </div>
+        <div class="card-footer small text-muted" th:if="${order.status.name() == 'GIAO_THAT_BAI' and !order.canRetryDelivery()}">
+            Đơn đã giao thất bại tối đa số lần cho phép, chỉ có thể chuyển hoàn.
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/order :: info(${order})}"></div>
+    <div th:replace="~{fragments/order :: history(${history})}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

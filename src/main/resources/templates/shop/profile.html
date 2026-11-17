@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thông tin shop')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Thông tin shop</h1>
+
+    <form th:action="@{/shop/profile}" th:object="${form}" method="post" novalidate>
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Thông tin chung</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Tên shop</label>
+                    <input class="form-control" th:field="*{shopName}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{shopName}"></div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Họ tên chủ shop</label>
+                    <input class="form-control" th:field="*{fullName}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{fullName}"></div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Số điện thoại</label>
+                    <input class="form-control" th:field="*{phone}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{phone}"></div>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Địa chỉ lấy hàng mặc định</label>
+                    <input class="form-control" th:field="*{address}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{address}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Phường</label>
+                    <select class="form-select" th:field="*{wardId}" th:errorclass="is-invalid">
+                        <option th:each="w : ${wards}" th:value="${w.id}" th:text="${w.name}"></option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{wardId}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Tài khoản ngân hàng nhận tiền đối soát</div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Ngân hàng</label>
+                    <input class="form-control" th:field="*{bankName}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Số tài khoản</label>
+                    <input class="form-control" th:field="*{bankAccountNo}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{bankAccountNo}"></div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Chủ tài khoản</label>
+                    <input class="form-control" th:field="*{bankAccountHolder}">
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary">Lưu thay đổi</button>
+    </form>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

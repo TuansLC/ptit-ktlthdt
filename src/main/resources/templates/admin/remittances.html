@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Phiếu nộp COD')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Phiếu nộp tiền COD của shipper</h1>
+    <div class="table-responsive">
+        <table class="table bg-white align-middle">
+            <thead class="table-light"><tr><th>Mã phiếu</th><th>Shipper</th><th>Ngày lập</th><th>Số đơn</th><th class="text-end">Số tiền</th><th>Trạng thái</th><th>Người duyệt</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${remittances}">
+                <td><a th:href="@{/admin/remittances/{id}(id=${r.id})}" th:text="${r.code}"></a></td>
+                <td th:text="${r.shipper.fullName}"></td>
+                <td th:text="${@fmt.dateTime(r.createdAt)}"></td>
+                <td th:text="${#lists.size(r.orders)}"></td>
+                <td class="text-end fw-semibold" th:text="${@fmt.money(r.totalAmount)}"></td>
+                <td><span class="badge" th:classappend="${'text-bg-' + r.statusBadge}" th:text="${r.statusLabel}"></span></td>
+                <td th:text="${r.reviewedBy ?: '—'}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(remittances)}"><td colspan="7" class="text-center text-muted py-4">Chưa có phiếu nào</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Đơn cần xử lý')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Đơn cần xử lý</h1>
+        <a class="btn btn-outline-success" th:href="@{/shipper/cod}">
+            Tiền COD đang giữ: <strong th:text="${@fmt.money(holding)}"></strong>
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-4" th:each="o : ${orders}">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between">
+                    <a class="fw-semibold" th:href="@{/shipper/orders/{id}(id=${o.id})}" th:text="${o.code}"></a>
+                    <span th:replace="~{fragments/order :: status(${o.status})}"></span>
+                </div>
+                <div class="card-body small">
+                    <th:block th:if="${o.status.name() == 'CHO_LAY_HANG' or o.status.name() == 'DANG_HOAN'}">
+                        <div class="text-muted" th:text="${o.status.name() == 'DANG_HOAN' ? 'Trả hàng về shop' : 'Lấy hàng tại'}"></div>
+                        <div class="fw-semibold" th:text="${o.shop.shopName + ' - ' + o.shop.phone}"></div>
+                        <div th:text="${o.pickupAddress + ', ' + o.pickupWard.name}"></div>
+                    </th:block>
+                    <th:block th:if="${o.status.name() == 'DANG_GIAO'}">
+                        <div class="text-muted">Giao cho</div>
+                        <div class="fw-semibold" th:text="${o.receiverName + ' - ' + o.receiverPhone}"></div>
+                        <div th:text="${o.receiverAddress + ', ' + o.deliveryWard.name}"></div>
+                        <div class="mt-2">Thu hộ: <strong th:text="${@fmt.money(o.codAmount)}"></strong></div>
+                    </th:block>
+                    <div class="mt-2 text-muted" th:text="${o.itemDescription + ', ' + @fmt.weight(o.weightGram)}"></div>
+                    <div class="mt-1"><span class="badge text-bg-light" th:text="${o.serviceType.label}"></span></div>
+                </div>
+                <div class="card-footer bg-white">
+                    <a class="btn btn-sm btn-primary w-100" th:href="@{/shipper/orders/{id}(id=${o.id})}">Xử lý</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12" th:if="${#lists.isEmpty(orders)}">
+            <div class="alert alert-light text-center">Không có đơn nào cần xử lý</div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

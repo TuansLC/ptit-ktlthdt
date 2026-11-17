@@ -1,0 +1,20 @@
+body {
+    background-color: #f4f6f9;
+}
+
+.stat-card .value {
+    font-size: 1.6rem;
+    font-weight: 600;
+}
+
+.auth-card {
+    max-width: 440px;
+}
+
+.auth-card.wide {
+    max-width: 720px;
+}
+
+.table td, .table th {
+    white-space: nowrap;
+}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tổng quan shop')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-0" th:text="${shop.shopName}">Shop</h1>
+            <div class="text-muted" th:text="${shop.address + ', phường ' + shop.ward.name}"></div>
+        </div>
+        <a class="btn btn-primary" th:href="@{/shop/orders/new}">+ Tạo đơn mới</a>
+    </div>
+
+    <div th:unless="${shop.hasBankAccount()}" class="alert alert-warning">
+        Shop chưa có tài khoản ngân hàng nhận tiền đối soát.
+        <a th:href="@{/shop/profile}">Cập nhật ngay</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3" th:each="s : ${allStatuses}">
+            <a class="text-decoration-none" th:href="@{/shop/orders(status=${s})}">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <span th:replace="~{fragments/order :: status(${s})}"></span>
+                        <div class="value mt-2 text-body" th:text="${counts.get(s)}">0</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Tạm tính đối soát kỳ tới</div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col"><div class="text-muted small">Số đơn</div><div class="fs-5" th:text="${ready.orderCount}"></div></div>
+                <div class="col"><div class="text-muted small">Tiền thu hộ</div><div class="fs-5" th:text="${@fmt.money(ready.totalCod)}"></div></div>
+                <div class="col"><div class="text-muted small">Phí vận chuyển</div><div class="fs-5" th:text="${'-' + @fmt.money(ready.totalFee)}"></div></div>
+                <div class="col"><div class="text-muted small">Shop nhận</div><div class="fs-5 fw-semibold text-success" th:text="${@fmt.money(ready.payout())}"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="h5">Đơn gần đây</h2>
+    <div th:replace="~{fragments/order :: table(${recentOrders}, '/shop/orders', false)}"></div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

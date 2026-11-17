@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý shop')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Shop</h1>
+    <div class="table-responsive">
+        <table class="table bg-white align-middle">
+            <thead class="table-light">
+            <tr><th>Tên đăng nhập</th><th>Shop</th><th>Chủ shop</th><th>SĐT</th><th>Địa chỉ</th><th>Tài khoản NH</th><th>Trạng thái</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shops}">
+                <td th:text="${s.username}"></td>
+                <td>
+                    <a th:href="@{/admin/orders(shopId=${s.id})}" th:text="${s.shopName}"></a>
+                </td>
+                <td th:text="${s.fullName}"></td>
+                <td th:text="${s.phone}"></td>
+                <td th:text="${s.address + ', ' + s.ward.name}"></td>
+                <td th:text="${s.hasBankAccount() ? s.bankName + ' - ' + s.bankAccountNo : 'Chưa có'}"></td>
+                <td>
+                    <span th:if="${s.active}" class="badge text-bg-success">Hoạt động</span>
+                    <span th:unless="${s.active}" class="badge text-bg-secondary">Đã khóa</span>
+                </td>
+                <td>
+                    <form th:action="@{/admin/users/{id}/active(id=${s.id})}" method="post">
+                        <input type="hidden" name="active" th:value="${!s.active}">
+                        <button class="btn btn-sm" th:classappend="${s.active ? 'btn-outline-danger' : 'btn-outline-success'}"
+                                th:text="${s.active ? 'Khóa' : 'Mở khóa'}"></button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | Giao hàng Hà Nội'">Giao hàng Hà Nội</title>
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-semibold" th:href="@{/}">🚚 Giao hàng Hà Nội</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto">
+                <th:block sec:authorize="hasRole('SHOP')">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shop}">Tổng quan</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/orders/new}">Tạo đơn</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/orders}">Đơn hàng</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/settlements}">Đối soát</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/profile}">Thông tin shop</a></li>
+                </th:block>
+                <th:block sec:authorize="hasRole('SHIPPER')">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper}">Đơn cần xử lý</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper/cod}">Tiền COD</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper/history}">Lịch sử</a></li>
+                </th:block>
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin}">Thống kê</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/orders}">Đơn hàng</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/remittances}">Nộp COD</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/settlements}">Đối soát</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Quản lý</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" th:href="@{/admin/shops}">Shop</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/shippers}">Shipper</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/zones}">Vùng giao hàng</a></li>
+                            <li><a class="dropdown-item" th:href="@{/admin/prices}">Bảng giá cước</a></li>
+                        </ul>
+                    </li>
+                </th:block>
+            </ul>
+            <div class="d-flex align-items-center gap-3 text-white" sec:authorize="isAuthenticated()">
+                <span>
+                    <span sec:authentication="principal.fullName">Tên</span>
+                    <small class="opacity-75">(<span sec:authentication="principal.role.label">Vai trò</span>)</small>
+                </span>
+                <form th:action="@{/logout}" method="post" class="m-0">
+                    <button class="btn btn-sm btn-outline-light">Đăng xuất</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div th:fragment="flash">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
+<th:block th:fragment="scripts">
+    <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}"></script>
+</th:block>
+
+</body>
+</html>

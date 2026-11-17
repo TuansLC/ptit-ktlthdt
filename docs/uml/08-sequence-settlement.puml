@@ -1,0 +1,50 @@
+@startuml sequence-settlement
+title Biểu đồ tuần tự - Nộp COD và đối soát với shop
+autonumber
+
+actor Shipper
+actor "Quản trị viên" as Admin
+control RemittanceService
+control SettlementService
+entity "remittance :\nCodRemittance" as R
+entity "settlement :\nSettlement" as S
+entity "order : Order" as O
+database DB
+
+== Shipper nộp tiền COD ==
+Shipper -> RemittanceService : submit(shipperId, note)
+RemittanceService -> DB : findCodPendingRemittance(shipper)
+RemittanceService -> R ** : new CodRemittance(shipper, orders, note)
+loop mỗi đơn
+  R -> O : attachToRemittance(this)
+end
+RemittanceService -> DB : save(remittance)
+
+== Quản trị viên xác nhận ==
+Admin -> RemittanceService : confirm(adminId, remittanceId)
+RemittanceService -> R : confirm(adminName)
+note right : status = DA_XAC_NHAN
+
+== Lập phiếu đối soát ==
+Admin -> SettlementService : create(shopId, note)
+SettlementService -> DB : findReadyForSettlement(shopId)
+note right
+  Đơn đã hoàn, hoặc giao thành công và
+  tiền COD đã được xác nhận nộp về
+end note
+SettlementService -> S ** : new Settlement(shop, orders, note)
+S -> S : totalCod = Σ settlementCod()\ntotalFee = Σ shippingFee\npayout = totalCod - totalFee
+alt payout > 0 và shop chưa có tài khoản ngân hàng
+  S --> SettlementService : BusinessException
+else
+  loop mỗi đơn
+    S -> O : attachToSettlement(this)
+  end
+  SettlementService -> DB : save(settlement)
+end
+
+== Thanh toán ==
+Admin -> SettlementService : markPaid(id, paymentRef)
+SettlementService -> S : markPaid(paymentRef)
+note right : status = DA_THANH_TOAN
+@enduml

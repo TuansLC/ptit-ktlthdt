@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tạo đơn')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main class="container py-4">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 class="h4 mb-3">Tạo đơn giao hàng</h1>
+
+    <form th:action="@{/shop/orders}" th:object="${form}" method="post" novalidate id="orderForm"
+          th:attr="data-quote-url=@{/shop/orders/quote}">
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">Lấy hàng</div>
+                    <div class="card-body row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Địa chỉ lấy hàng</label>
+                            <input class="form-control" th:field="*{pickupAddress}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{pickupAddress}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phường</label>
+                            <select class="form-select quote-input" th:field="*{pickupWardId}" th:errorclass="is-invalid">
+                                <option value="">-- Chọn phường --</option>
+                                <option th:each="w : ${wards}" th:value="${w.id}" th:text="${w.name + ' (' + w.zone.code + ')'}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{pickupWardId}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">Người nhận</div>
+                    <div class="card-body row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Họ tên</label>
+                            <input class="form-control" th:field="*{receiverName}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{receiverName}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input class="form-control" th:field="*{receiverPhone}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{receiverPhone}"></div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Địa chỉ giao hàng</label>
+                            <input class="form-control" th:field="*{receiverAddress}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{receiverAddress}"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Phường</label>
+                            <select class="form-select quote-input" th:field="*{deliveryWardId}" th:errorclass="is-invalid">
+                                <option value="">-- Chọn phường --</option>
+                                <option th:each="w : ${wards}" th:value="${w.id}" th:text="${w.name + ' (' + w.zone.code + ')'}"></option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{deliveryWardId}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">Hàng hóa</div>
+                    <div class="card-body row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nội dung hàng</label>
+                            <input class="form-control" th:field="*{itemDescription}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{itemDescription}"></div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Khối lượng (gram)</label>
+                            <input class="form-control quote-input" type="number" min="1" th:field="*{weightGram}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{weightGram}"></div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tiền thu hộ (đ)</label>
+                            <input class="form-control" type="number" min="0" step="1000" th:field="*{codAmount}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{codAmount}"></div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Ghi chú cho shipper</label>
+                            <textarea class="form-control" rows="2" th:field="*{note}"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">Dịch vụ</div>
+                    <div class="card-body">
+                        <div class="form-check mb-2" th:each="t : ${serviceTypes}">
+                            <input class="form-check-input quote-input" type="radio" th:field="*{serviceType}" th:value="${t}">
+                            <label class="form-check-label" th:for="${#ids.prev('serviceType')}">
+                                <span class="fw-semibold" th:text="${t.label}"></span>
+                                <div class="small text-muted" th:text="${t.description}"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">Phí vận chuyển tạm tính</div>
+                    <div class="card-body" id="quoteBox">
+                        <div class="text-muted" id="quoteHint">Chọn phường, khối lượng và dịch vụ để xem phí</div>
+                        <div class="text-danger d-none" id="quoteError"></div>
+                        <table class="table table-sm mb-0 d-none" id="quoteTable">
+                            <tr><td>Tuyến</td><td class="text-end" id="qRoute"></td></tr>
+                            <tr><td>Cước cơ bản</td><td class="text-end" id="qBase"></td></tr>
+                            <tr><td>Cước vượt cân</td><td class="text-end" id="qWeight"></td></tr>
+                            <tr><td>Phụ phí dịch vụ</td><td class="text-end" id="qSurcharge"></td></tr>
+                            <tr class="fw-semibold"><td>Tổng</td><td class="text-end" id="qTotal"></td></tr>
+                        </table>
+                    </div>
+                </div>
+                <button class="btn btn-primary w-100">Tạo đơn</button>
+            </div>
+        </div>
+    </form>
+</main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    (function () {
+        const form = document.getElementById('orderForm');
+        const url = form.dataset.quoteUrl;
+        const el = id => document.getElementById(id);
+
+        function show(state) {
+            el('quoteHint').classList.toggle('d-none', state !== 'hint');
+            el('quoteError').classList.toggle('d-none', state !== 'error');
+            el('quoteTable').classList.toggle('d-none', state !== 'ok');
+        }
+
+        async function refresh() {
+            const pickup = form.querySelector('[name=pickupWardId]').value;
+            const delivery = form.querySelector('[name=deliveryWardId]').value;
+            const weight = form.querySelector('[name=weightGram]').value;
+            const service = form.querySelector('[name=serviceType]:checked');
+            if (!pickup || !delivery || !weight || !service) {
+                show('hint');
+                return;
+            }
+            const params = new URLSearchParams({
+                pickupWardId: pickup, deliveryWardId: delivery, weightGram: weight, serviceType: service.value
+            });
+            const res = await fetch(url + '?' + params);
+            if (!res.ok) {
+                show('hint');
+                return;
+            }
+            const q = await res.json();
+            if (!q.ok) {
+                el('quoteError').textContent = q.message;
+                show('error');
+                return;
+            }
+            el('qRoute').textContent = q.route;
+            el('qBase').textContent = q.baseFee;
+            el('qWeight').textContent = q.weightFee;
+            el('qSurcharge').textContent = q.surcharge;
+            el('qTotal').textContent = q.total;
+            show('ok');
+        }
+
+        form.querySelectorAll('.quote-input').forEach(i => i.addEventListener('change', refresh));
+        refresh();
+    })();
+</script>
+</body>
+</html>
