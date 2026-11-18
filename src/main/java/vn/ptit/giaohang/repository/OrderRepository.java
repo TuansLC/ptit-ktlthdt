@@ -73,6 +73,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Bo sung finishedAt cho don ket thuc truoc khi co truong nay (du lieu cu).
      * Lay deliveredAt neu co, neu khong lay updatedAt.
      */
+    /** Chi dung khi tao du lieu mau: dat lai cac moc thoi gian (va ma don theo ngay) ve qua khu. */
+    @Modifying
+    @Query("""
+            update Order o set o.code = :code, o.createdAt = :created, o.updatedAt = :finished,
+                   o.finishedAt = :finished, o.deliveredAt = :delivered
+            where o.id = :id
+            """)
+    int backdate(@Param("id") Long id, @Param("code") String code, @Param("created") LocalDateTime created,
+                 @Param("finished") LocalDateTime finished, @Param("delivered") LocalDateTime delivered);
+
     @Modifying
     @Query("""
             update Order o set o.finishedAt = coalesce(o.deliveredAt, o.updatedAt)

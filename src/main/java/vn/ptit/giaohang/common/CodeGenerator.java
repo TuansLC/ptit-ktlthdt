@@ -14,6 +14,10 @@ public final class CodeGenerator {
     }
 
     public static String generate(String prefix, long id) {
-        return prefix + LocalDate.now().format(DATE) + String.format("%05d", id);
+        return generate(prefix, LocalDate.now(), id);
+    }
+
+    public static String generate(String prefix, LocalDate date, long id) {
+        return prefix + date.format(DATE) + String.format("%05d", id);
     }
 }

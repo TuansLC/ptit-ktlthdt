@@ -21,7 +21,9 @@ public class AdminDashboardController {
         this.statisticsService = statisticsService;
     }
 
-    /** Mac dinh thong ke tu dau thang den hom nay. */
+    private static final int DEFAULT_RANGE_DAYS = 30;
+
+    /** Mac dinh thong ke 30 ngay gan nhat, tinh ca hom nay. */
     @GetMapping
     public String dashboard(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -31,14 +33,14 @@ public class AdminDashboardController {
             to = today;
         }
         if (from == null) {
-            from = to.withDayOfMonth(1);
+            from = to.minusDays(DEFAULT_RANGE_DAYS - 1);
         }
         try {
             model.addAttribute("stats", statisticsService.adminStats(from, to));
         } catch (BusinessException e) {
             // Khoang ngay khong hop le: bao loi va hien thang hien tai
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("stats", statisticsService.adminStats(today.withDayOfMonth(1), today));
+            model.addAttribute("stats", statisticsService.adminStats(today.minusDays(DEFAULT_RANGE_DAYS - 1), today));
         }
         return "admin/dashboard";
     }

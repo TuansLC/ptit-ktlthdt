@@ -6,7 +6,11 @@
 <main class="container py-4">
     <div th:replace="~{fragments/layout :: flash}"></div>
     <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
-        <h1 class="h4 mb-0">Thống kê</h1>
+        <div>
+            <h1 class="h4 mb-0">Thống kê</h1>
+            <div class="small text-muted"
+                 th:text="${'Từ ' + #temporals.format(stats.from, 'dd/MM/yyyy') + ' đến ' + #temporals.format(stats.to, 'dd/MM/yyyy')}"></div>
+        </div>
         <form class="d-flex gap-2 align-items-end" th:action="@{/admin}" method="get">
             <div><label class="form-label small mb-0">Từ ngày</label>
                 <input class="form-control form-control-sm" type="date" name="from" th:value="${stats.from}"></div>
@@ -16,31 +20,53 @@
         </form>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
-            <div class="text-muted small">Doanh thu phí vận chuyển trong kỳ</div>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-lg-3"><div class="card stat-card accent-primary h-100"><div class="card-body">
+            <div class="text-muted small">Doanh thu phí vận chuyển</div>
             <div class="value text-primary" th:text="${@fmt.money(stats.revenueInPeriod())}"></div></div></div></div>
-        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
-            <div class="text-muted small">Giao thành công / Hoàn trong kỳ</div>
-            <div class="value" th:text="${stats.deliveredInPeriod() + ' / ' + stats.returnedInPeriod()}"></div></div></div></div>
-        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
-            <div class="text-muted small">Tỷ lệ giao thành công</div>
-            <div class="value text-success" th:text="${#numbers.formatDecimal(stats.successRate(), 1, 1) + ' %'}"></div></div></div></div>
-        <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
-            <div class="text-muted small">Tổng số đơn</div>
+        <div class="col-6 col-lg-3"><div class="card stat-card accent-success h-100"><div class="card-body">
+            <div class="text-muted small">Giao thành công</div>
+            <div class="value text-success" th:text="${stats.deliveredInPeriod()}"></div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card stat-card accent-danger h-100"><div class="card-body">
+            <div class="text-muted small">Đã hoàn</div>
+            <div class="value text-danger" th:text="${stats.returnedInPeriod()}"></div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card stat-card accent-secondary h-100"><div class="card-body">
+            <div class="text-muted small">Tổng số đơn trong hệ thống</div>
             <div class="value" th:text="${stats.totalOrders}"></div></div></div></div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header fw-semibold">Đơn kết thúc và doanh thu theo ngày</div>
-        <div class="card-body">
-            <div style="position: relative; height: 320px">
-                <canvas id="dailyChart"></canvas>
+    <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+            <div class="card chart-card h-100">
+                <div class="card-body">
+                    <div class="chart-title">Đơn kết thúc theo ngày</div>
+                    <div class="chart-subtitle">Số đơn giao thành công và đơn hoàn, tính theo ngày đơn kết thúc</div>
+                    <div class="chart-box" style="height: 280px"><canvas id="ordersChart"></canvas></div>
+                </div>
             </div>
-            <p class="small text-muted mt-2 mb-0">
-                Tính theo ngày đơn kết thúc (giao thành công hoặc đã hoàn).
-                Doanh thu là phí vận chuyển của các đơn đó.
-            </p>
+        </div>
+        <div class="col-lg-4">
+            <div class="card chart-card h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="chart-title">Kết quả giao hàng</div>
+                    <div class="chart-subtitle">Tỷ lệ trên các đơn đã kết thúc trong kỳ</div>
+                    <div class="chart-box flex-grow-1" style="min-height: 220px"><canvas id="resultChart"></canvas></div>
+                    <div class="d-flex justify-content-around small mt-2">
+                        <div><span class="legend-dot bg-success"></span>Thành công
+                            <strong th:text="${stats.deliveredInPeriod()}"></strong></div>
+                        <div><span class="legend-dot bg-danger"></span>Đã hoàn
+                            <strong th:text="${stats.returnedInPeriod()}"></strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card chart-card mb-4">
+        <div class="card-body">
+            <div class="chart-title">Doanh thu phí vận chuyển theo ngày</div>
+            <div class="chart-subtitle">Phí vận chuyển của đơn giao thành công và đơn hoàn (shop vẫn chịu phí khi hoàn)</div>
+            <div class="chart-box" style="height: 240px"><canvas id="revenueChart"></canvas></div>
         </div>
     </div>
 
@@ -83,29 +109,114 @@
         const delivered = /*[[${stats.chartDelivered()}]]*/ [];
         const returned = /*[[${stats.chartReturned()}]]*/ [];
         const revenue = /*[[${stats.chartRevenue()}]]*/ [];
-        const money = v => v.toLocaleString('vi-VN') + ' đ';
+        const totalDelivered = /*[[${stats.deliveredInPeriod()}]]*/ 0;
+        const totalReturned = /*[[${stats.returnedInPeriod()}]]*/ 0;
 
-        new Chart(document.getElementById('dailyChart'), {
+        const GREEN = '#198754', RED = '#dc3545', BLUE = '#0d6efd';
+        const money = v => v.toLocaleString('vi-VN') + ' đ';
+        const compactMoney = v => v >= 1e6 ? (v / 1e6).toLocaleString('vi-VN') + ' tr'
+            : v >= 1e3 ? (v / 1e3).toLocaleString('vi-VN') + 'k' : v;
+
+        Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+        Chart.defaults.color = '#6c757d';
+        const tooltip = {backgroundColor: '#212529', padding: 10, cornerRadius: 6, boxPadding: 4, usePointStyle: true};
+        const softGrid = {color: 'rgba(0, 0, 0, 0.05)'};
+        const dayAxis = {grid: {display: false}, border: {display: false},
+            ticks: {maxRotation: 0, autoSkip: true, maxTicksLimit: 10}};
+
+        // --- So don theo ngay: cot chong ---
+        new Chart(document.getElementById('ordersChart'), {
+            type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
-                    {type: 'bar', label: 'Giao thành công', data: delivered, backgroundColor: '#198754', stack: 'don', yAxisID: 'y'},
-                    {type: 'bar', label: 'Đã hoàn', data: returned, backgroundColor: '#dc3545', stack: 'don', yAxisID: 'y'},
-                    {type: 'line', label: 'Doanh thu', data: revenue, borderColor: '#0d6efd', backgroundColor: '#0d6efd',
-                        tension: 0.3, yAxisID: 'y1'}
-                ]
+                    {label: 'Giao thành công', data: delivered, backgroundColor: GREEN},
+                    {label: 'Đã hoàn', data: returned, backgroundColor: RED}
+                ].map(d => Object.assign(d, {borderRadius: 3, maxBarThickness: 22, categoryPercentage: 0.7}))
             },
             options: {
                 maintainAspectRatio: false,
                 interaction: {mode: 'index', intersect: false},
                 scales: {
-                    x: {stacked: true},
-                    y: {stacked: true, beginAtZero: true, ticks: {precision: 0}, title: {display: true, text: 'Số đơn'}},
-                    y1: {position: 'right', beginAtZero: true, grid: {drawOnChartArea: false},
-                        ticks: {callback: money}, title: {display: true, text: 'Doanh thu'}}
+                    x: Object.assign({stacked: true}, dayAxis),
+                    y: {stacked: true, beginAtZero: true, grace: '10%', grid: softGrid, border: {display: false},
+                        ticks: {precision: 0}}
                 },
                 plugins: {
-                    tooltip: {callbacks: {label: c => c.dataset.label + ': ' + (c.dataset.yAxisID === 'y1' ? money(c.parsed.y) : c.parsed.y)}}
+                    legend: {position: 'top', align: 'end', labels: {usePointStyle: true, pointStyle: 'circle', boxWidth: 8}},
+                    tooltip: tooltip
+                }
+            }
+        });
+
+        // --- Ket qua giao hang: vanh khuyen, ty le o giua ---
+        const finished = totalDelivered + totalReturned;
+        const rate = finished === 0 ? '—' : Math.round(1000 * totalDelivered / finished) / 10 + '%';
+        const centerText = {
+            id: 'centerText',
+            afterDraw(chart) {
+                const {ctx, chartArea: a} = chart;
+                const x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#212529';
+                ctx.font = '600 26px ' + Chart.defaults.font.family;
+                ctx.fillText(rate, x, y + 4);
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '12px ' + Chart.defaults.font.family;
+                ctx.fillText('thành công', x, y + 24);
+                ctx.restore();
+            }
+        };
+        new Chart(document.getElementById('resultChart'), {
+            type: 'doughnut',
+            data: {
+                labels: finished === 0 ? ['Chưa có dữ liệu'] : ['Giao thành công', 'Đã hoàn'],
+                datasets: [{
+                    data: finished === 0 ? [1] : [totalDelivered, totalReturned],
+                    backgroundColor: finished === 0 ? ['#e9ecef'] : [GREEN, RED],
+                    borderWidth: 0, hoverOffset: 4
+                }]
+            },
+            options: {
+                maintainAspectRatio: false, cutout: '74%',
+                plugins: {legend: {display: false}, tooltip: Object.assign({enabled: finished > 0}, tooltip)}
+            },
+            plugins: [centerText]
+        });
+
+        // --- Doanh thu: vung to mau chuyen dan ---
+        new Chart(document.getElementById('revenueChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu', data: revenue, borderColor: BLUE, borderWidth: 2.5,
+                    cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 5,
+                    pointBackgroundColor: BLUE, fill: true,
+                    backgroundColor: ctx => {
+                        const area = ctx.chart.chartArea;
+                        if (!area) {
+                            return 'rgba(13, 110, 253, 0.15)';
+                        }
+                        const g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+                        g.addColorStop(0, 'rgba(13, 110, 253, 0.28)');
+                        g.addColorStop(1, 'rgba(13, 110, 253, 0.02)');
+                        return g;
+                    }
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                interaction: {mode: 'index', intersect: false},
+                scales: {
+                    x: dayAxis,
+                    y: {beginAtZero: true, grace: '10%', grid: softGrid, border: {display: false},
+                        ticks: {callback: compactMoney, maxTicksLimit: 6}}
+                },
+                plugins: {
+                    legend: {display: false},
+                    tooltip: Object.assign({callbacks: {label: c => ' ' + money(c.parsed.y)}}, tooltip)
                 }
             }
         });

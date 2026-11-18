@@ -7,6 +7,39 @@ body {
     font-weight: 600;
 }
 
+.card {
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Vach mau ben trai cua the so lieu tren trang thong ke */
+.stat-card.accent-primary { border-left: 4px solid #0d6efd; }
+.stat-card.accent-success { border-left: 4px solid #198754; }
+.stat-card.accent-danger { border-left: 4px solid #dc3545; }
+.stat-card.accent-secondary { border-left: 4px solid #adb5bd; }
+
+.chart-card .chart-title {
+    font-weight: 600;
+}
+
+.chart-card .chart-subtitle {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+}
+
+.chart-box {
+    position: relative;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
 .auth-card {
     max-width: 440px;
 }

@@ -61,14 +61,20 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderService orderService;
     private final RemittanceService remittanceService;
     private final OrderRepository orderRepository;
+    private final DemoHistorySeeder historySeeder;
+
+    /** So ngay lich su van hanh duoc tao truoc ngay hom nay. */
+    private static final int HISTORY_DAYS = 28;
 
     private final Map<String, Ward> wards = new HashMap<>();
 
     public DataInitializer(UserRepository userRepository, DeliveryZoneRepository zoneRepository,
                            WardRepository wardRepository, PriceConfigRepository priceConfigRepository,
                            PasswordEncoder passwordEncoder, OrderService orderService,
-                           RemittanceService remittanceService, OrderRepository orderRepository) {
+                           RemittanceService remittanceService, OrderRepository orderRepository,
+                           DemoHistorySeeder historySeeder) {
         this.orderRepository = orderRepository;
+        this.historySeeder = historySeeder;
         this.userRepository = userRepository;
         this.zoneRepository = zoneRepository;
         this.wardRepository = wardRepository;
@@ -122,7 +128,10 @@ public class DataInitializer implements CommandLineRunner {
         Shipper binh = userRepository.save(new Shipper("shipper_binh", demoPassword, "Đỗ Quang Bình", "0983000002",
                 "29H1-678.90", z2));
 
+        List<Ward> servedWards = wards.values().stream().filter(Ward::isServed).toList();
+        historySeeder.seed(admin, List.of(hoa, minh), List.of(an, binh), servedWards, HISTORY_DAYS);
         seedOrders(admin, hoa, minh, an, binh);
+        historySeeder.applyBackdating();
         log.info("Đã tạo dữ liệu mẫu. Tài khoản: admin / shop_hoa / shop_minh / shipper_an / shipper_binh, mật khẩu 123456");
     }
 

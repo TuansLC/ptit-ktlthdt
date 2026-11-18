@@ -11,7 +11,9 @@ mvn spring-boot:run
 ```
 
 Mở http://localhost:8080. Mặc định ứng dụng dùng H2 lưu file trong thư mục `data/`, không cần cài thêm gì.
-Lần chạy đầu tiên hệ thống tự tạo dữ liệu mẫu: 2 vùng giao hàng, 51 phường Hà Nội, bảng giá, tài khoản và 9 đơn ở các trạng thái khác nhau.
+Lần chạy đầu tiên hệ thống tự tạo dữ liệu mẫu: 2 vùng giao hàng, 51 phường Hà Nội, bảng giá, tài khoản,
+lịch sử vận hành 28 ngày trước (khoảng 115 đơn đã kết thúc, nộp COD và đối soát theo tuần, để biểu đồ thống kê có số liệu)
+và 9 đơn của hôm nay ở các trạng thái khác nhau để demo.
 Muốn tạo lại dữ liệu mẫu từ đầu: tắt ứng dụng, xóa thư mục `data/`, chạy lại.
 
 ### Chạy với MySQL
