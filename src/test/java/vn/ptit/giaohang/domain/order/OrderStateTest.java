@@ -43,6 +43,25 @@ class OrderStateTest {
     }
 
     @Test
+    void finishedAtIsSetOnlyWhenOrderReachesFinalState() {
+        order.assignShipper(shipper);
+        order.pickUp();
+        assertThat(order.getFinishedAt()).isNull();
+        order.deliverFail("Khách không nghe máy");
+        assertThat(order.getFinishedAt()).isNull();
+        order.startReturn();
+        order.confirmReturned();
+        assertThat(order.getFinishedAt()).isNotNull();
+    }
+
+    @Test
+    void shipperCoversWardInOwnZoneOnly() {
+        assertThat(shipper.covers(KIM_LIEN)).isTrue();
+        assertThat(shipper.covers(HA_DONG)).isFalse();
+        assertThat(shipper.covers(SON_TAY)).isFalse();
+    }
+
+    @Test
     void cannotPickUpBeforeAssignment() {
         assertThatThrownBy(order::pickUp)
                 .isInstanceOf(BusinessException.class)

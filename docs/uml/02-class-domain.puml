@@ -13,6 +13,7 @@ package "user" {
     - active : boolean
     + {abstract} getRole() : Role
     + updateContact(fullName, phone)
+    + changePasswordHash(hash)
     + activate()
     + deactivate()
   }
@@ -30,6 +31,8 @@ package "user" {
   class Shipper {
     - vehiclePlate : String
     + getRole() : Role
+    + updateWorkInfo(plate, zone)
+    + covers(ward : Ward) : boolean
   }
   class Admin {
     + getRole() : Role
@@ -75,6 +78,8 @@ package "order" {
     - status : OrderStatus
     - failedAttempts : int
     - collectedAmount : long
+    - deliveredAt : LocalDateTime
+    - finishedAt : LocalDateTime
     + assignShipper(shipper)
     + cancel()
     + pickUp()

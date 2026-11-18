@@ -1,6 +1,9 @@
 package vn.ptit.giaohang.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import vn.ptit.giaohang.domain.order.Order;
@@ -13,9 +16,7 @@ import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    /** Tim don theo bo loc tuy chon; tham so null nghia la khong loc theo tieu chi do. */
-    @Query("""
-            select o from Order o
+    String SEARCH_WHERE = """
             where (:status is null or o.status = :status)
               and (:shopId is null or o.shop.id = :shopId)
               and (:shipperId is null or o.shipper.id = :shipperId)
@@ -23,12 +24,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                    or lower(o.code) like lower(concat('%', :keyword, '%'))
                    or o.receiverPhone like concat('%', :keyword, '%')
                    or lower(o.receiverName) like lower(concat('%', :keyword, '%')))
-            order by o.createdAt desc
-            """)
-    List<Order> search(@Param("status") OrderStatus status,
+            """;
+
+    /** Tim don theo bo loc tuy chon, co phan trang; tham so null nghia la khong loc theo tieu chi do. */
+    @Query(value = "select o from Order o " + SEARCH_WHERE + " order by o.createdAt desc, o.id desc",
+            countQuery = "select count(o) from Order o " + SEARCH_WHERE)
+    Page<Order> search(@Param("status") OrderStatus status,
                        @Param("shopId") Long shopId,
                        @Param("shipperId") Long shipperId,
-                       @Param("keyword") String keyword);
+                       @Param("keyword") String keyword,
+                       Pageable pageable);
 
     List<Order> findByShipperAndStatusInOrderByCreatedAtAsc(Shipper shipper, Collection<OrderStatus> statuses);
 
@@ -55,21 +60,23 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByShopIdAndStatus(Long shopId, OrderStatus status);
 
-    long countByShopId(Long shopId);
-
+    /** Cac don ket thuc o mot trong cac trang thai cho truoc, trong khoang [from, to). Dung cho thong ke. */
     @Query("""
-            select coalesce(sum(o.shippingFee), 0) from Order o
-            where o.status in :statuses and o.updatedAt >= :from and o.updatedAt < :to
+            select o from Order o
+            where o.status in :statuses and o.finishedAt >= :from and o.finishedAt < :to
             """)
-    long sumShippingFee(@Param("statuses") Collection<OrderStatus> statuses,
-                        @Param("from") LocalDateTime from,
-                        @Param("to") LocalDateTime to);
+    List<Order> findFinishedBetween(@Param("statuses") Collection<OrderStatus> statuses,
+                                    @Param("from") LocalDateTime from,
+                                    @Param("to") LocalDateTime to);
 
+    /**
+     * Bo sung finishedAt cho don ket thuc truoc khi co truong nay (du lieu cu).
+     * Lay deliveredAt neu co, neu khong lay updatedAt.
+     */
+    @Modifying
     @Query("""
-            select count(o) from Order o
-            where o.status = :status and o.updatedAt >= :from and o.updatedAt < :to
+            update Order o set o.finishedAt = coalesce(o.deliveredAt, o.updatedAt)
+            where o.finishedAt is null and o.status in :finalStatuses
             """)
-    long countFinishedBetween(@Param("status") OrderStatus status,
-                              @Param("from") LocalDateTime from,
-                              @Param("to") LocalDateTime to);
+    int backfillFinishedAt(@Param("finalStatuses") Collection<OrderStatus> finalStatuses);
 }

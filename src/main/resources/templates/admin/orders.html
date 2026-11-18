@@ -31,6 +31,7 @@
         </div>
         <div class="col-md-1"><button class="btn btn-outline-primary w-100">Lọc</button></div>
     </form>
+    <p class="small text-muted mb-2">Khi phân công nhanh, ★ đánh dấu shipper phụ trách vùng của phường giao.</p>
 
     <div class="table-responsive">
         <table class="table table-hover align-middle bg-white">
@@ -41,7 +42,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="o : ${orders}">
+            <tr th:each="o : ${page.content}">
                 <td><a class="fw-semibold" th:href="@{/admin/orders/{id}(id=${o.id})}" th:text="${o.code}"></a></td>
                 <td class="small" th:text="${@fmt.dateTime(o.createdAt)}"></td>
                 <td th:text="${o.shop.shopName}"></td>
@@ -58,7 +59,7 @@
                         <select class="form-select form-select-sm" name="shipperId" required>
                             <option value="">Chọn shipper</option>
                             <option th:each="s : ${activeShippers}" th:value="${s.id}"
-                                    th:text="${s.fullName + (s.zone != null ? ' (' + s.zone.code + ')' : '')}"></option>
+                                    th:text="${(s.covers(o.deliveryWard) ? '★ ' : '') + s.fullName + (s.zone != null ? ' (' + s.zone.code + ')' : '')}"></option>
                         </select>
                         <button class="btn btn-sm btn-primary">Giao</button>
                     </form>
@@ -66,10 +67,11 @@
                           th:text="${o.shipper != null ? o.shipper.fullName : '—'}"></span>
                 </td>
             </tr>
-            <tr th:if="${#lists.isEmpty(orders)}"><td colspan="10" class="text-center text-muted py-4">Không có đơn hàng nào</td></tr>
+            <tr th:if="${page.empty}"><td colspan="10" class="text-center text-muted py-4">Không có đơn hàng nào</td></tr>
             </tbody>
         </table>
     </div>
+    <div th:replace="~{fragments/pagination :: pager(${page})}"></div>
 </main>
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>

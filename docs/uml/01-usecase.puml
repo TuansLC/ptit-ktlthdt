@@ -9,6 +9,8 @@ actor "Quản trị viên" as Admin
 
 rectangle "Hệ thống giao hàng" {
   usecase "Đăng nhập / Đăng xuất" as UC_Login
+  usecase "Đổi mật khẩu" as UC_Password
+  usecase "Đặt lại mật khẩu\ncho shop, shipper" as UC_ResetPassword
   usecase "Đăng ký tài khoản shop" as UC_Register
   usecase "Cập nhật thông tin shop\nvà tài khoản ngân hàng" as UC_Profile
   usecase "Tạo đơn giao hàng" as UC_CreateOrder
@@ -34,6 +36,7 @@ rectangle "Hệ thống giao hàng" {
 
 Shop --> UC_Register
 Shop --> UC_Login
+Shop --> UC_Password
 Shop --> UC_Profile
 Shop --> UC_CreateOrder
 Shop --> UC_TrackOrder
@@ -42,12 +45,15 @@ Shop --> UC_ViewSettlement
 UC_CreateOrder ..> UC_Quote : <<include>>
 
 Shipper --> UC_Login
+Shipper --> UC_Password
 Shipper --> UC_MyOrders
 Shipper --> UC_UpdateStatus
 Shipper --> UC_Remit
 UC_Collect .> UC_UpdateStatus : <<extend>>
 
 Admin --> UC_Login
+Admin --> UC_Password
+Admin --> UC_ResetPassword
 Admin --> UC_Accounts
 Admin --> UC_Zones
 Admin --> UC_Prices

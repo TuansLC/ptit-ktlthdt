@@ -102,6 +102,12 @@ public class Order {
 
     private LocalDateTime deliveredAt;
 
+    /**
+     * Thoi diem don ket thuc (giao thanh cong, da hoan, da huy). Dung cho thong ke theo ky.
+     * Khac updatedAt: khong doi khi don duoc gan vao phieu nop COD hay phieu doi soat.
+     */
+    private LocalDateTime finishedAt;
+
     // ---- Doi soat ----
     @ManyToOne
     @JoinColumn(name = "cod_remittance_id")
@@ -207,6 +213,9 @@ public class Order {
 
     void moveTo(OrderStatus next) {
         this.status = next;
+        if (next.isFinal()) {
+            this.finishedAt = LocalDateTime.now();
+        }
     }
 
     void setShipper(Shipper shipper) {
@@ -377,6 +386,10 @@ public class Order {
 
     public LocalDateTime getDeliveredAt() {
         return deliveredAt;
+    }
+
+    public LocalDateTime getFinishedAt() {
+        return finishedAt;
     }
 
     public CodRemittance getCodRemittance() {

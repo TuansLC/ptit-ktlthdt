@@ -1,6 +1,8 @@
 package vn.ptit.giaohang.service;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.ptit.giaohang.common.NotFoundException;
@@ -29,6 +31,8 @@ import java.util.function.Consumer;
 @Service
 @Transactional(readOnly = true)
 public class OrderService {
+
+    public static final int PAGE_SIZE = 15;
 
     /** Don shipper con phai xu ly. */
     private static final EnumSet<OrderStatus> SHIPPER_ACTIVE =
@@ -90,8 +94,12 @@ public class OrderService {
         return order;
     }
 
-    public List<Order> searchForShop(Long shopId, OrderStatus status, String keyword) {
-        return orderRepository.search(status, shopId, null, normalize(keyword));
+    public Page<Order> searchForShop(Long shopId, OrderStatus status, String keyword, int page) {
+        return orderRepository.search(status, shopId, null, normalize(keyword), pageOf(page));
+    }
+
+    public List<Order> recentForShop(Long shopId, int limit) {
+        return orderRepository.search(null, shopId, null, null, PageRequest.of(0, limit)).getContent();
     }
 
     // ===================== Shipper =====================
@@ -101,8 +109,8 @@ public class OrderService {
                 accountService.getShipper(shipperId), SHIPPER_ACTIVE);
     }
 
-    public List<Order> historyForShipper(Long shipperId) {
-        return orderRepository.search(null, null, shipperId, null);
+    public Page<Order> historyForShipper(Long shipperId, int page) {
+        return orderRepository.search(null, null, shipperId, null, pageOf(page));
     }
 
     public Order findForShipper(Long shipperId, Long orderId) {
@@ -140,8 +148,8 @@ public class OrderService {
 
     // ===================== Admin =====================
 
-    public List<Order> searchForAdmin(OrderStatus status, Long shopId, Long shipperId, String keyword) {
-        return orderRepository.search(status, shopId, shipperId, normalize(keyword));
+    public Page<Order> searchForAdmin(OrderStatus status, Long shopId, Long shipperId, String keyword, int page) {
+        return orderRepository.search(status, shopId, shipperId, normalize(keyword), pageOf(page));
     }
 
     @Transactional
@@ -185,6 +193,10 @@ public class OrderService {
         OrderStatus before = order.getStatus();
         action.accept(order);
         eventPublisher.publishEvent(new OrderStatusChangedEvent(order, before, order.getStatus(), actor, note));
+    }
+
+    private static PageRequest pageOf(int page) {
+        return PageRequest.of(Math.max(page, 0), PAGE_SIZE);
     }
 
     private static String normalize(String keyword) {

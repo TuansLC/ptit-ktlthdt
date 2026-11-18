@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Yêu cầu không hợp lệ')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main th:replace="~{fragments/error :: errorPage(${status}, 'Yêu cầu không hợp lệ', null, 'Đường dẫn hoặc dữ liệu gửi lên không đúng định dạng.')}"></main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

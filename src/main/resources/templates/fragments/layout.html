@@ -11,7 +11,7 @@
 
 <body>
 
-<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary" th:with="p=${currentPath ?: ''}">
     <div class="container">
         <a class="navbar-brand fw-semibold" th:href="@{/}">🚚 Giao hàng Hà Nội</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
@@ -20,43 +20,52 @@
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav me-auto">
                 <th:block sec:authorize="hasRole('SHOP')">
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shop}">Tổng quan</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/orders/new}">Tạo đơn</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/orders}">Đơn hàng</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/settlements}">Đối soát</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shop/profile}">Thông tin shop</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/shop'} ? 'active'" th:href="@{/shop}">Tổng quan</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/shop/orders/new'} ? 'active'" th:href="@{/shop/orders/new}">Tạo đơn</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/shop/orders') and p != '/shop/orders/new'} ? 'active'" th:href="@{/shop/orders}">Đơn hàng</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/shop/settlements')} ? 'active'" th:href="@{/shop/settlements}">Đối soát</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/shop/profile'} ? 'active'" th:href="@{/shop/profile}">Thông tin shop</a></li>
                 </th:block>
                 <th:block sec:authorize="hasRole('SHIPPER')">
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper}">Đơn cần xử lý</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper/cod}">Tiền COD</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/shipper/history}">Lịch sử</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/shipper' or p.startsWith('/shipper/orders')} ? 'active'" th:href="@{/shipper}">Đơn cần xử lý</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/shipper/cod')} ? 'active'" th:href="@{/shipper/cod}">Tiền COD</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/shipper/history'} ? 'active'" th:href="@{/shipper/history}">Lịch sử</a></li>
                 </th:block>
                 <th:block sec:authorize="hasRole('ADMIN')">
-                    <li class="nav-item"><a class="nav-link" th:href="@{/admin}">Thống kê</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/orders}">Đơn hàng</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/remittances}">Nộp COD</a></li>
-                    <li class="nav-item"><a class="nav-link" th:href="@{/admin/settlements}">Đối soát</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p == '/admin'} ? 'active'" th:href="@{/admin}">Thống kê</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/admin/orders')} ? 'active'" th:href="@{/admin/orders}">Đơn hàng</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/admin/remittances')} ? 'active'" th:href="@{/admin/remittances}">Nộp COD</a></li>
+                    <li class="nav-item"><a class="nav-link" th:classappend="${p.startsWith('/admin/settlements')} ? 'active'" th:href="@{/admin/settlements}">Đối soát</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Quản lý</a>
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"
+                           th:classappend="${p.startsWith('/admin/shops') or p.startsWith('/admin/shippers') or p.startsWith('/admin/users') or p.startsWith('/admin/zones') or p.startsWith('/admin/prices')} ? 'active'">Quản lý</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" th:href="@{/admin/shops}">Shop</a></li>
-                            <li><a class="dropdown-item" th:href="@{/admin/shippers}">Shipper</a></li>
+                            <li><a class="dropdown-item" th:classappend="${p.startsWith('/admin/shops')} ? 'active'" th:href="@{/admin/shops}">Shop</a></li>
+                            <li><a class="dropdown-item" th:classappend="${p.startsWith('/admin/shippers')} ? 'active'" th:href="@{/admin/shippers}">Shipper</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" th:href="@{/admin/zones}">Vùng giao hàng</a></li>
-                            <li><a class="dropdown-item" th:href="@{/admin/prices}">Bảng giá cước</a></li>
+                            <li><a class="dropdown-item" th:classappend="${p.startsWith('/admin/zones')} ? 'active'" th:href="@{/admin/zones}">Vùng giao hàng</a></li>
+                            <li><a class="dropdown-item" th:classappend="${p.startsWith('/admin/prices')} ? 'active'" th:href="@{/admin/prices}">Bảng giá cước</a></li>
                         </ul>
                     </li>
                 </th:block>
             </ul>
-            <div class="d-flex align-items-center gap-3 text-white" sec:authorize="isAuthenticated()">
-                <span>
-                    <span sec:authentication="principal.fullName">Tên</span>
-                    <small class="opacity-75">(<span sec:authentication="principal.role.label">Vai trò</span>)</small>
-                </span>
-                <form th:action="@{/logout}" method="post" class="m-0">
-                    <button class="btn btn-sm btn-outline-light">Đăng xuất</button>
-                </form>
-            </div>
+            <ul class="navbar-nav" sec:authorize="isAuthenticated()">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <span sec:authentication="principal.fullName">Tên</span>
+                        <small class="opacity-75">(<span sec:authentication="principal.role.label">Vai trò</span>)</small>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/account/password}">Đổi mật khẩu</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button class="dropdown-item text-danger">Đăng xuất</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>

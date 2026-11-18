@@ -27,8 +27,9 @@ public class AdminOrderController {
     public String list(@RequestParam(required = false) OrderStatus status,
                        @RequestParam(required = false) Long shopId,
                        @RequestParam(required = false) Long shipperId,
-                       @RequestParam(required = false) String keyword, Model model) {
-        model.addAttribute("orders", orderService.searchForAdmin(status, shopId, shipperId, keyword));
+                       @RequestParam(required = false) String keyword,
+                       @RequestParam(defaultValue = "0") int page, Model model) {
+        model.addAttribute("page", orderService.searchForAdmin(status, shopId, shipperId, keyword, page));
         model.addAttribute("shops", accountService.allShops());
         model.addAttribute("shippers", accountService.allShippers());
         model.addAttribute("activeShippers", accountService.activeShippers());
@@ -44,7 +45,7 @@ public class AdminOrderController {
         Order order = orderService.findById(id);
         model.addAttribute("order", order);
         model.addAttribute("history", orderService.history(order));
-        model.addAttribute("activeShippers", accountService.activeShippers());
+        model.addAttribute("activeShippers", accountService.shippersForDelivery(order.getDeliveryWard()));
         return "admin/order-detail";
     }
 

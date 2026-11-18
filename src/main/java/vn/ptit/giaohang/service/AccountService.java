@@ -12,12 +12,14 @@ import vn.ptit.giaohang.domain.user.User;
 import vn.ptit.giaohang.domain.zone.DeliveryZone;
 import vn.ptit.giaohang.domain.zone.Ward;
 import vn.ptit.giaohang.dto.RegisterShopForm;
+import vn.ptit.giaohang.dto.ShipperEditForm;
 import vn.ptit.giaohang.dto.ShipperForm;
 import vn.ptit.giaohang.dto.ShopProfileForm;
 import vn.ptit.giaohang.repository.ShipperRepository;
 import vn.ptit.giaohang.repository.ShopRepository;
 import vn.ptit.giaohang.repository.UserRepository;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -72,6 +74,47 @@ public class AccountService {
         shop.updateProfile(f.getShopName().trim(), f.getAddress().trim(), ward);
         shop.updateBankAccount(blankToNull(f.getBankName()), blankToNull(f.getBankAccountNo()),
                 blankToNull(f.getBankAccountHolder()));
+    }
+
+    @Transactional
+    public void updateShipper(Long shipperId, ShipperEditForm f) {
+        Shipper shipper = getShipper(shipperId);
+        DeliveryZone zone = f.getZoneId() == null ? null : zoneService.getZone(f.getZoneId());
+        shipper.updateContact(f.getFullName().trim(), f.getPhone());
+        shipper.updateWorkInfo(blankToNull(f.getVehiclePlate()), zone);
+    }
+
+    /** Nguoi dung tu doi mat khau: phai nhap dung mat khau hien tai. */
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = getUser(userId);
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BusinessException("Mật khẩu hiện tại không đúng");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BusinessException("Mật khẩu mới phải khác mật khẩu hiện tại");
+        }
+        user.changePasswordHash(passwordEncoder.encode(newPassword));
+    }
+
+    /** Quan tri vien dat lai mat khau cho shop hoac shipper (vi du khi ho quen mat khau). */
+    @Transactional
+    public void resetPassword(Long userId, String newPassword) {
+        User user = getUser(userId);
+        if (user.getRole() == Role.ADMIN) {
+            throw new BusinessException("Không thể đặt lại mật khẩu quản trị viên tại đây");
+        }
+        if (newPassword == null || newPassword.length() < 6 || newPassword.length() > 100) {
+            throw new BusinessException("Mật khẩu mới tối thiểu 6 ký tự");
+        }
+        user.changePasswordHash(passwordEncoder.encode(newPassword));
+    }
+
+    /** Shipper dang hoat dong, nguoi phu trach vung cua phuong giao duoc dua len dau. */
+    public List<Shipper> shippersForDelivery(Ward deliveryWard) {
+        return activeShippers().stream()
+                .sorted(Comparator.comparing((Shipper s) -> !s.covers(deliveryWard)))
+                .toList();
     }
 
     /** Khoa / mo khoa tai khoan shop hoac shipper. Khong cho khoa quan tri vien. */

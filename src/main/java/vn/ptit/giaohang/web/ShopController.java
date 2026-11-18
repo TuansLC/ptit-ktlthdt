@@ -49,8 +49,7 @@ public class ShopController {
         model.addAttribute("shop", shop);
         model.addAttribute("counts", statisticsService.shopCountByStatus(shop.getId()));
         model.addAttribute("ready", settlementService.summarize(shop));
-        model.addAttribute("recentOrders", orderService.searchForShop(shop.getId(), null, null)
-                .stream().limit(5).toList());
+        model.addAttribute("recentOrders", orderService.recentForShop(shop.getId(), 5));
         return "shop/dashboard";
     }
 
@@ -59,8 +58,9 @@ public class ShopController {
     @GetMapping("/orders")
     public String orders(@AuthenticationPrincipal AppUserDetails user,
                          @RequestParam(required = false) OrderStatus status,
-                         @RequestParam(required = false) String keyword, Model model) {
-        model.addAttribute("orders", orderService.searchForShop(user.getId(), status, keyword));
+                         @RequestParam(required = false) String keyword,
+                         @RequestParam(defaultValue = "0") int page, Model model) {
+        model.addAttribute("page", orderService.searchForShop(user.getId(), status, keyword, page));
         model.addAttribute("status", status);
         model.addAttribute("keyword", keyword);
         return "shop/orders";

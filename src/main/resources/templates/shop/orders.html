@@ -23,7 +23,8 @@
         <div class="col-md-2"><button class="btn btn-outline-primary w-100">Lọc</button></div>
     </form>
 
-    <div th:replace="~{fragments/order :: table(${orders}, '/shop/orders', false)}"></div>
+    <div th:replace="~{fragments/order :: table(${page.content}, '/shop/orders', false)}"></div>
+    <div th:replace="~{fragments/pagination :: pager(${page})}"></div>
 </main>
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>

@@ -7,7 +7,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.ptit.giaohang.common.BusinessException;
+import vn.ptit.giaohang.common.NotFoundException;
 import vn.ptit.giaohang.domain.user.Role;
+import vn.ptit.giaohang.domain.user.User;
+import vn.ptit.giaohang.dto.ShipperEditForm;
 import vn.ptit.giaohang.dto.ShipperForm;
 import vn.ptit.giaohang.service.AccountService;
 import vn.ptit.giaohang.service.RemittanceService;
@@ -62,11 +65,55 @@ public class AdminAccountController {
         return "admin/shippers";
     }
 
+    @GetMapping("/shippers/{id}/edit")
+    public String editShipperForm(@PathVariable Long id, Model model) {
+        model.addAttribute("shipper", accountService.getShipper(id));
+        model.addAttribute("form", ShipperEditForm.from(accountService.getShipper(id)));
+        model.addAttribute("zones", zoneService.allZones());
+        return "admin/shipper-edit";
+    }
+
+    @PostMapping("/shippers/{id}/edit")
+    public String editShipper(@PathVariable Long id, @Valid @ModelAttribute("form") ShipperEditForm form,
+                              BindingResult result, Model model, RedirectAttributes redirect) {
+        if (!result.hasErrors()) {
+            accountService.updateShipper(id, form);
+            redirect.addFlashAttribute("success", "Đã cập nhật thông tin shipper " + form.getFullName());
+            return "redirect:/admin/shippers";
+        }
+        model.addAttribute("shipper", accountService.getShipper(id));
+        model.addAttribute("zones", zoneService.allZones());
+        return "admin/shipper-edit";
+    }
+
+    @GetMapping("/users/{id}/password")
+    public String resetPasswordForm(@PathVariable Long id, Model model) {
+        User user = accountService.getUser(id);
+        if (user.getRole() == Role.ADMIN) {
+            throw new NotFoundException("Không tìm thấy tài khoản");
+        }
+        model.addAttribute("user", user);
+        return "admin/reset-password";
+    }
+
+    @PostMapping("/users/{id}/password")
+    public String resetPassword(@PathVariable Long id, @RequestParam String newPassword,
+                                RedirectAttributes redirect) {
+        accountService.resetPassword(id, newPassword);
+        User user = accountService.getUser(id);
+        redirect.addFlashAttribute("success", "Đã đặt lại mật khẩu cho " + user.getUsername());
+        return "redirect:" + listUrl(user);
+    }
+
     @PostMapping("/users/{id}/active")
     public String setActive(@PathVariable Long id, @RequestParam boolean active, RedirectAttributes redirect) {
         accountService.setActive(id, active);
         redirect.addFlashAttribute("success", active ? "Đã mở khóa tài khoản" : "Đã khóa tài khoản");
-        return "redirect:" + (accountService.getUser(id).getRole() == Role.SHOP ? "/admin/shops" : "/admin/shippers");
+        return "redirect:" + listUrl(accountService.getUser(id));
+    }
+
+    private static String listUrl(User user) {
+        return user.getRole() == Role.SHOP ? "/admin/shops" : "/admin/shippers";
     }
 
     private void addShipperListData(Model model) {

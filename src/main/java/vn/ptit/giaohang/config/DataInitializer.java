@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import vn.ptit.giaohang.domain.order.Order;
+import vn.ptit.giaohang.domain.order.OrderStatus;
 import vn.ptit.giaohang.domain.pricing.PriceConfig;
 import vn.ptit.giaohang.domain.pricing.ServiceType;
 import vn.ptit.giaohang.domain.user.Admin;
@@ -20,6 +21,7 @@ import vn.ptit.giaohang.repository.*;
 import vn.ptit.giaohang.service.OrderService;
 import vn.ptit.giaohang.service.RemittanceService;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,13 +60,15 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final OrderService orderService;
     private final RemittanceService remittanceService;
+    private final OrderRepository orderRepository;
 
     private final Map<String, Ward> wards = new HashMap<>();
 
     public DataInitializer(UserRepository userRepository, DeliveryZoneRepository zoneRepository,
                            WardRepository wardRepository, PriceConfigRepository priceConfigRepository,
                            PasswordEncoder passwordEncoder, OrderService orderService,
-                           RemittanceService remittanceService) {
+                           RemittanceService remittanceService, OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.zoneRepository = zoneRepository;
         this.wardRepository = wardRepository;
@@ -78,6 +82,11 @@ public class DataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         if (userRepository.count() > 0) {
+            int fixed = orderRepository.backfillFinishedAt(
+                    EnumSet.of(OrderStatus.GIAO_THANH_CONG, OrderStatus.DA_HOAN, OrderStatus.DA_HUY));
+            if (fixed > 0) {
+                log.info("Đã bổ sung thời điểm kết thúc cho {} đơn cũ", fixed);
+            }
             return;
         }
         log.info("CSDL trống, đang tạo dữ liệu mẫu...");

@@ -58,6 +58,10 @@ public abstract class User {
         this.phone = phone;
     }
 
+    public void changePasswordHash(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+    }
+
     public void activate() {
         this.active = true;
     }

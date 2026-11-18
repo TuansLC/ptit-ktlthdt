@@ -33,10 +33,13 @@ public class AdminDashboardController {
         if (from == null) {
             from = to.withDayOfMonth(1);
         }
-        if (from.isAfter(to)) {
-            throw new BusinessException("Ngày bắt đầu phải trước ngày kết thúc");
+        try {
+            model.addAttribute("stats", statisticsService.adminStats(from, to));
+        } catch (BusinessException e) {
+            // Khoang ngay khong hop le: bao loi va hien thang hien tai
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("stats", statisticsService.adminStats(today.withDayOfMonth(1), today));
         }
-        model.addAttribute("stats", statisticsService.adminStats(from, to));
         return "admin/dashboard";
     }
 }

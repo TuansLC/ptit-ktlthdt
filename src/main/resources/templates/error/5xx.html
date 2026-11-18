@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Lỗi hệ thống')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main th:replace="~{fragments/error :: errorPage(${status}, 'Lỗi hệ thống', null, 'Đã có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại sau ít phút.')}"></main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

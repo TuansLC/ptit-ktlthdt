@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Không có quyền truy cập')}"></head>
+<body>
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+<main th:replace="~{fragments/error :: errorPage('403', 'Không có quyền truy cập', null, 'Tài khoản của bạn không được phép mở trang này, hoặc phiên làm việc đã hết hạn. Hãy quay lại và thử lại.')}"></main>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

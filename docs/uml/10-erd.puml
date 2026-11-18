@@ -65,7 +65,7 @@ entity orders {
   * status : VARCHAR(20)
   shipper_id : BIGINT <<FK>>
   failed_attempts, last_fail_reason
-  collected_amount, delivered_at
+  collected_amount, delivered_at, finished_at
   cod_remittance_id : BIGINT <<FK>>
   settlement_id : BIGINT <<FK>>
   created_at, updated_at

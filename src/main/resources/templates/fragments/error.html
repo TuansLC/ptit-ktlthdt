@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Noi dung trang loi dung chung. message: thong bao cu the, rong thi dung defaultMessage -->
+<main th:fragment="errorPage(code, title, message, defaultMessage)" class="container py-5 text-center">
+    <div class="display-1 fw-bold text-primary opacity-50" th:text="${code}">404</div>
+    <h1 class="h3 mb-2" th:text="${title}">Không tìm thấy</h1>
+    <p class="text-muted mb-4" th:text="${#strings.isEmpty(message) ? defaultMessage : message}"></p>
+    <a class="btn btn-primary" th:href="@{/}">Về trang chủ</a>
+    <button type="button" class="btn btn-outline-secondary ms-2" onclick="history.back()">Quay lại</button>
+</main>
+</body>
+</html>

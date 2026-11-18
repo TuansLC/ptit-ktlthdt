@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Thanh phan trang cho doi tuong Page cua Spring Data. pageUrlBase lay tu GlobalModelAttributes -->
+<div th:fragment="pager(p)" class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+     th:if="${p.totalElements > 0}">
+    <div class="small text-muted"
+         th:text="${'Hiển thị ' + (p.number * p.size + 1) + '–' + (p.number * p.size + p.numberOfElements) + ' / ' + p.totalElements + ' đơn'}"></div>
+    <nav th:if="${p.totalPages > 1}">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" th:classappend="${p.first} ? 'disabled'">
+                <a class="page-link" th:href="@{${pageUrlBase + 'page=' + (p.number - 1)}}">‹ Trước</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, p.totalPages - 1)}"
+                th:if="${i == 0 or i == p.totalPages - 1 or (i >= p.number - 2 and i <= p.number + 2)}"
+                th:classappend="${i == p.number} ? 'active'">
+                <a class="page-link" th:href="@{${pageUrlBase + 'page=' + i}}" th:text="${i + 1}"></a>
+            </li>
+            <li class="page-item" th:classappend="${p.last} ? 'disabled'">
+                <a class="page-link" th:href="@{${pageUrlBase + 'page=' + (p.number + 1)}}">Sau ›</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+</body>
+</html>

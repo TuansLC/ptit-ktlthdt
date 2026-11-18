@@ -21,7 +21,7 @@
                     <select class="form-select" name="shipperId" required>
                         <option value="">-- Chọn shipper --</option>
                         <option th:each="s : ${activeShippers}" th:value="${s.id}"
-                                th:text="${s.fullName + (s.zone != null ? ' - ' + s.zone.name : '')}"
+                                th:text="${(s.covers(order.deliveryWard) ? '★ ' : '') + s.fullName + (s.zone != null ? ' - ' + s.zone.name : '')}"
                                 th:selected="${order.shipper != null and order.shipper.id == s.id}"></option>
                     </select>
                 </div>
@@ -33,7 +33,8 @@
                 <div>
                     <label class="form-label">Giao lại (lần <span th:text="${order.failedAttempts + 1}"></span>)</label>
                     <select class="form-select" name="shipperId" required>
-                        <option th:each="s : ${activeShippers}" th:value="${s.id}" th:text="${s.fullName}"
+                        <option th:each="s : ${activeShippers}" th:value="${s.id}"
+                                th:text="${(s.covers(order.deliveryWard) ? '★ ' : '') + s.fullName}"
                                 th:selected="${order.shipper != null and order.shipper.id == s.id}"></option>
                     </select>
                 </div>
@@ -46,8 +47,13 @@
                 <button class="btn btn-dark">Chuyển hoàn về shop</button>
             </form>
         </div>
-        <div class="card-footer small text-muted" th:if="${order.status.name() == 'GIAO_THAT_BAI' and !order.canRetryDelivery()}">
-            Đơn đã giao thất bại tối đa số lần cho phép, chỉ có thể chuyển hoàn.
+        <div class="card-footer small text-muted">
+            <span th:if="${order.allows(act['ASSIGN']) or order.allows(act['RETRY'])}">
+                ★ = shipper phụ trách vùng của phường giao (<span th:text="${order.deliveryWard.zone != null ? order.deliveryWard.zone.name : 'chưa gán vùng'}"></span>), được xếp lên đầu.
+            </span>
+            <span th:if="${order.status.name() == 'GIAO_THAT_BAI' and !order.canRetryDelivery()}">
+                Đơn đã giao thất bại tối đa số lần cho phép, chỉ có thể chuyển hoàn.
+            </span>
         </div>
     </div>
 

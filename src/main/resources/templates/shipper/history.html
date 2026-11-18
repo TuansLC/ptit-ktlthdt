@@ -6,7 +6,8 @@
 <main class="container py-4">
     <div th:replace="~{fragments/layout :: flash}"></div>
     <h1 class="h4 mb-3">Tất cả đơn đã nhận</h1>
-    <div th:replace="~{fragments/order :: table(${orders}, '/shipper/orders', true)}"></div>
+    <div th:replace="~{fragments/order :: table(${page.content}, '/shipper/orders', true)}"></div>
+    <div th:replace="~{fragments/pagination :: pager(${page})}"></div>
 </main>
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
 </body>

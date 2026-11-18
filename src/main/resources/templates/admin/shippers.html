@@ -25,7 +25,9 @@
                     <span th:if="${s.active}" class="badge text-bg-success">Hoạt động</span>
                     <span th:unless="${s.active}" class="badge text-bg-secondary">Đã khóa</span>
                 </td>
-                <td>
+                <td class="d-flex gap-1">
+                    <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/shippers/{id}/edit(id=${s.id})}">Sửa</a>
+                    <a class="btn btn-sm btn-outline-warning" th:href="@{/admin/users/{id}/password(id=${s.id})}">Đặt lại MK</a>
                     <form th:action="@{/admin/users/{id}/active(id=${s.id})}" method="post">
                         <input type="hidden" name="active" th:value="${!s.active}">
                         <button class="btn btn-sm" th:classappend="${s.active ? 'btn-outline-danger' : 'btn-outline-success'}"

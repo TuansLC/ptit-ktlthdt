@@ -34,8 +34,9 @@ public class ShipperController {
     }
 
     @GetMapping("/history")
-    public String history(@AuthenticationPrincipal AppUserDetails user, Model model) {
-        model.addAttribute("orders", orderService.historyForShipper(user.getId()));
+    public String history(@AuthenticationPrincipal AppUserDetails user,
+                          @RequestParam(defaultValue = "0") int page, Model model) {
+        model.addAttribute("page", orderService.historyForShipper(user.getId(), page));
         return "shipper/history";
     }
 

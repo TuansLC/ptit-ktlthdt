@@ -19,16 +19,29 @@
     <div class="row g-3 mb-4">
         <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
             <div class="text-muted small">Doanh thu phí vận chuyển trong kỳ</div>
-            <div class="value text-primary" th:text="${@fmt.money(stats.revenueInPeriod)}"></div></div></div></div>
+            <div class="value text-primary" th:text="${@fmt.money(stats.revenueInPeriod())}"></div></div></div></div>
         <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
             <div class="text-muted small">Giao thành công / Hoàn trong kỳ</div>
-            <div class="value" th:text="${stats.deliveredInPeriod + ' / ' + stats.returnedInPeriod}"></div></div></div></div>
+            <div class="value" th:text="${stats.deliveredInPeriod() + ' / ' + stats.returnedInPeriod()}"></div></div></div></div>
         <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
             <div class="text-muted small">Tỷ lệ giao thành công</div>
             <div class="value text-success" th:text="${#numbers.formatDecimal(stats.successRate(), 1, 1) + ' %'}"></div></div></div></div>
         <div class="col-md-3"><div class="card stat-card h-100"><div class="card-body">
             <div class="text-muted small">Tổng số đơn</div>
             <div class="value" th:text="${stats.totalOrders}"></div></div></div></div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header fw-semibold">Đơn kết thúc và doanh thu theo ngày</div>
+        <div class="card-body">
+            <div style="position: relative; height: 320px">
+                <canvas id="dailyChart"></canvas>
+            </div>
+            <p class="small text-muted mt-2 mb-0">
+                Tính theo ngày đơn kết thúc (giao thành công hoặc đã hoàn).
+                Doanh thu là phí vận chuyển của các đơn đó.
+            </p>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -63,5 +76,40 @@
     </div>
 </main>
 <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:src="@{/webjars/chart.js/4.4.1/dist/chart.umd.js}"></script>
+<script th:inline="javascript">
+    (function () {
+        const labels = /*[[${stats.chartLabels()}]]*/ [];
+        const delivered = /*[[${stats.chartDelivered()}]]*/ [];
+        const returned = /*[[${stats.chartReturned()}]]*/ [];
+        const revenue = /*[[${stats.chartRevenue()}]]*/ [];
+        const money = v => v.toLocaleString('vi-VN') + ' đ';
+
+        new Chart(document.getElementById('dailyChart'), {
+            data: {
+                labels: labels,
+                datasets: [
+                    {type: 'bar', label: 'Giao thành công', data: delivered, backgroundColor: '#198754', stack: 'don', yAxisID: 'y'},
+                    {type: 'bar', label: 'Đã hoàn', data: returned, backgroundColor: '#dc3545', stack: 'don', yAxisID: 'y'},
+                    {type: 'line', label: 'Doanh thu', data: revenue, borderColor: '#0d6efd', backgroundColor: '#0d6efd',
+                        tension: 0.3, yAxisID: 'y1'}
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                interaction: {mode: 'index', intersect: false},
+                scales: {
+                    x: {stacked: true},
+                    y: {stacked: true, beginAtZero: true, ticks: {precision: 0}, title: {display: true, text: 'Số đơn'}},
+                    y1: {position: 'right', beginAtZero: true, grid: {drawOnChartArea: false},
+                        ticks: {callback: money}, title: {display: true, text: 'Doanh thu'}}
+                },
+                plugins: {
+                    tooltip: {callbacks: {label: c => c.dataset.label + ': ' + (c.dataset.yAxisID === 'y1' ? money(c.parsed.y) : c.parsed.y)}}
+                }
+            }
+        });
+    })();
+</script>
 </body>
 </html>

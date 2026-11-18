@@ -48,6 +48,18 @@ class SecurityAccessTest {
     }
 
     @Test
+    void changePasswordPageRequiresLogin() throws Exception {
+        mvc.perform(get("/account/password")).andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    @WithMockUser(roles = "SHOP")
+    void shopCannotResetOtherUsersPassword() throws Exception {
+        mvc.perform(get("/admin/users/1/password")).andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     void postWithoutCsrfTokenIsRejected() throws Exception {
         mvc.perform(post("/admin/orders/1/return")).andExpect(status().isForbidden());

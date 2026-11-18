@@ -43,6 +43,8 @@ CSDL `giaohang` được tạo tự động nếu chưa có. Có thể đổi ho
 5. `admin` vào **Nộp COD**, xác nhận phiếu; vào **Đối soát**, lập phiếu cho shop và ghi nhận chuyển khoản.
 6. `shop_hoa` vào **Đối soát** xem phiếu và mã giao dịch.
 7. Với đơn giao thất bại, `admin` cho giao lại tối đa 3 lần, sau đó chỉ còn nút **Chuyển hoàn**.
+8. `admin` mở **Thống kê**: biểu đồ cột số đơn giao thành công / hoàn theo ngày và đường doanh thu; đổi khoảng ngày để xem kỳ khác.
+9. Bấm vào tên người dùng góc phải để **Đổi mật khẩu**. `admin` có thể sửa thông tin shipper và đặt lại mật khẩu cho shop, shipper trong mục **Quản lý**.
 
 ## Cấu trúc mã nguồn
 
@@ -87,6 +89,8 @@ docs/uml              Biểu đồ UML dạng PlantUML
 - Mỗi đơn giao thất bại tối đa 3 lần, sau đó phải chuyển hoàn.
 - Đơn giao thành công chỉ được đối soát khi tiền COD đã được quản trị viên xác nhận nhận từ shipper.
 - Tiền trả shop = tổng COD đơn giao thành công - tổng phí vận chuyển (cả đơn hoàn). Nếu shop được nhận tiền thì phải có tài khoản ngân hàng.
+- Thống kê theo kỳ tính theo thời điểm đơn kết thúc (`finishedAt`), không đổi khi đơn được đưa vào phiếu nộp COD hay phiếu đối soát. Mỗi lần xem tối đa 366 ngày.
+- Khi phân công, shipper phụ trách vùng của phường giao được đánh dấu ★ và xếp lên đầu.
 
 ## Kiểm thử
 
@@ -94,10 +98,11 @@ docs/uml              Biểu đồ UML dạng PlantUML
 mvn test
 ```
 
-29 test gồm:
+41 test gồm:
 - `OrderStateTest`: chuyển trạng thái hợp lệ / không hợp lệ, giới hạn 3 lần giao.
 - `ShippingFeeStrategyTest`: tính phí cùng vùng, khác vùng, vượt cân, hỏa tốc, ngoài phạm vi.
 - `DeliveryFlowIntegrationTest`: toàn bộ quy trình tạo đơn → giao → nộp COD → đối soát trên H2.
+- `AccountAndStatsIntegrationTest`: đổi / đặt lại mật khẩu, sửa shipper, phân trang, thống kê theo ngày kết thúc đơn.
 - `SecurityAccessTest`: phân quyền URL theo vai trò, chặn POST thiếu CSRF token.
 
 ## Biểu đồ UML
