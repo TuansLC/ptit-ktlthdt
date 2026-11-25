@@ -1,0 +1,28 @@
+@startuml h08-trang-thai-don
+!include _style.iuml
+skinparam StateBorderColor #3b5b92
+skinparam StateBackgroundColor #f4f7fc
+
+state "Chờ phân công" as CHO_PHAN_CONG
+state "Chờ lấy hàng" as CHO_LAY_HANG
+state "Đang giao" as DANG_GIAO
+state "Giao thất bại" as GIAO_THAT_BAI
+state "Đang hoàn" as DANG_HOAN
+state "Giao thành công" as GIAO_THANH_CONG
+state "Đã hoàn" as DA_HOAN
+state "Đã hủy" as DA_HUY
+
+[*] --> CHO_PHAN_CONG : Shop tạo đơn
+CHO_PHAN_CONG --> CHO_LAY_HANG : phân công shipper
+CHO_PHAN_CONG --> DA_HUY : shop hủy
+CHO_LAY_HANG --> DA_HUY : shop hủy
+CHO_LAY_HANG --> DANG_GIAO : shipper lấy hàng
+DANG_GIAO --> GIAO_THANH_CONG : giao thành công\n[tiền thu = COD]
+DANG_GIAO --> GIAO_THAT_BAI : báo thất bại [có lý do]
+GIAO_THAT_BAI --> DANG_GIAO : giao lại [số lần < 3]
+GIAO_THAT_BAI --> DANG_HOAN : chuyển hoàn
+DANG_HOAN --> DA_HOAN : trả hàng cho shop
+GIAO_THANH_CONG --> [*]
+DA_HOAN --> [*]
+DA_HUY --> [*]
+@enduml

@@ -1,0 +1,23 @@
+@startuml h01-kien-truc
+!include _style.iuml
+skinparam rectangleBorderColor #3b5b92
+skinparam rectangleBackgroundColor #f4f7fc
+skinparam databaseBorderColor #3b5b92
+skinparam databaseBackgroundColor #f4f7fc
+
+actor "Shop / Shipper /\nQuản trị viên" as U
+rectangle "**Tầng giao diện** (vn.ptit.giaohang.web)\nController + template Thymeleaf\nShopController, ShipperController, Admin*Controller" as W
+rectangle "**security**\nSpring Security\nphân quyền theo vai trò" as SEC
+rectangle "**Tầng dịch vụ** (service)\nĐiều phối ca sử dụng, giao dịch\nOrderService, PricingService, SettlementService..." as S
+rectangle "**Tầng nghiệp vụ** (domain)\nLớp thực thể và quy tắc nghiệp vụ\nuser, zone, pricing, order, finance" as D
+rectangle "**Tầng truy cập dữ liệu** (repository)\nSpring Data JPA" as R
+database "MySQL\n(H2 khi chạy thử)" as DB
+
+U --> SEC : HTTP
+SEC --> W
+W --> S : gọi
+S --> D : dùng lớp nghiệp vụ
+S --> R : đọc / ghi
+R ..> D : ánh xạ thực thể
+R --> DB : JDBC / Hibernate
+@enduml

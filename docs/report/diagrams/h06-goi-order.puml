@@ -1,0 +1,84 @@
+@startuml h06-goi-order
+!include _style.iuml
+
+class Order {
+  + {static} MAX_DELIVERY_ATTEMPTS = 3
+  - id : Long
+  - code : String
+  - version : long
+  - pickupAddress : String
+  - receiverName : String
+  - receiverPhone : String
+  - receiverAddress : String
+  - itemDescription : String
+  - weightGram : int
+  - codAmount : long
+  - serviceType : ServiceType
+  - shippingFee : long
+  - status : OrderStatus
+  - failedAttempts : int
+  - lastFailReason : String
+  - collectedAmount : long
+  - deliveredAt, finishedAt : LocalDateTime
+  - createdAt, updatedAt : LocalDateTime
+  --
+  + assignShipper(shipper)
+  + cancel()
+  + pickUp()
+  + deliverSuccess(collectedAmount)
+  + deliverFail(reason)
+  + retryDelivery(shipper)
+  + startReturn()
+  + confirmReturned()
+  + allowedActions() : Set<OrderAction>
+  + isCodPendingRemittance() : boolean
+  + isReadyForSettlement() : boolean
+  + settlementCod() : long
+  ~ moveTo(next : OrderStatus)
+  ~ setShipper(shipper)
+  ~ markDelivered(amount)
+  ~ recordFailedAttempt(reason)
+}
+enum OrderStatus {
+  CHO_PHAN_CONG
+  CHO_LAY_HANG
+  DANG_GIAO
+  GIAO_THAT_BAI
+  DANG_HOAN
+  GIAO_THANH_CONG
+  DA_HOAN
+  DA_HUY
+  + getState() : OrderState
+  + isFinal() : boolean
+}
+enum OrderAction {
+  ASSIGN, CANCEL, PICK_UP
+  DELIVER_SUCCESS, DELIVER_FAIL
+  RETRY, START_RETURN
+  CONFIRM_RETURNED
+}
+class OrderStatusHistory {
+  - id : Long
+  - fromStatus : OrderStatus
+  - toStatus : OrderStatus
+  - actorName : String
+  - actorRole : String
+  - note : String
+  - createdAt : LocalDateTime
+}
+class Shop
+class Shipper
+class Ward
+class CodRemittance
+class Settlement
+
+Order --> OrderStatus : status
+Order ..> OrderAction
+Order "*" --> "1" Shop
+Order "*" --> "0..1" Shipper
+Order "*" --> "1" Ward : pickupWard
+Order "*" --> "1" Ward : deliveryWard
+Order "*" --> "0..1" CodRemittance
+Order "*" --> "0..1" Settlement
+OrderStatusHistory "*" --> "1" Order
+@enduml

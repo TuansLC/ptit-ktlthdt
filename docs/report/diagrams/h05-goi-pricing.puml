@@ -1,0 +1,69 @@
+@startuml h05-goi-pricing
+!include _style.iuml
+
+class PricingService <<service>> {
+  + quote(pickupWard, deliveryWard, weight, type) : FeeQuote
+}
+class ShippingFeeStrategyFactory {
+  - strategies : Map<ServiceType, ShippingFeeStrategy>
+  + get(type : ServiceType) : ShippingFeeStrategy
+}
+interface ShippingFeeStrategy {
+  + getServiceType() : ServiceType
+  + calculate(request, config) : FeeQuote
+}
+abstract class AbstractShippingFeeStrategy {
+  + <<final>> calculate(request, config) : FeeQuote
+  # weightFee(weightGram, config) : long
+  # validateSpecific(request, config)
+  # {abstract} surcharge(request, config) : long
+}
+class StandardFeeStrategy {
+  # surcharge() : long
+}
+class ExpressFeeStrategy {
+  # validateSpecific()
+  # surcharge() : long
+}
+class PriceConfig {
+  - serviceType : ServiceType
+  - sameZoneFee : long
+  - crossZoneFee : long
+  - includedWeightGram : int
+  - stepWeightGram : int
+  - extraFeePerStep : long
+  - maxWeightGram : int
+  - surcharge : long
+  + update(...)
+}
+class FeeRequest <<record>> {
+  pickupWard : Ward
+  deliveryWard : Ward
+  weightGram : int
+  serviceType : ServiceType
+  + isSameZone() : boolean
+}
+class FeeQuote <<record>> {
+  serviceType : ServiceType
+  sameZone : boolean
+  baseFee : long
+  weightFee : long
+  surcharge : long
+  + total() : long
+}
+enum ServiceType {
+  TIEU_CHUAN
+  HOA_TOC
+}
+
+PricingService --> ShippingFeeStrategyFactory
+PricingService ..> PriceConfig
+ShippingFeeStrategyFactory o--> "*" ShippingFeeStrategy
+ShippingFeeStrategy <|.. AbstractShippingFeeStrategy
+AbstractShippingFeeStrategy <|-- StandardFeeStrategy
+AbstractShippingFeeStrategy <|-- ExpressFeeStrategy
+ShippingFeeStrategy ..> FeeRequest
+ShippingFeeStrategy ..> FeeQuote
+ShippingFeeStrategy ..> PriceConfig
+PriceConfig --> ServiceType
+@enduml

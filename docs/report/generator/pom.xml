@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Cong cu rieng de sinh bao cao Word; khong thuoc ung dung web -->
+    <groupId>vn.ptit</groupId>
+    <artifactId>report-generator</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <poi.version>5.2.5</poi.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.poi</groupId>
+                    <artifactId>poi-ooxml-lite</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml-full</artifactId>
+            <version>${poi.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <mainClass>vn.ptit.report.ReportGenerator</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,25 @@
+@startuml h04-goi-zone
+!include _style.iuml
+
+class DeliveryZone {
+  - id : Long
+  - code : String
+  - name : String
+  - description : String
+  + sameAs(other : DeliveryZone) : boolean
+}
+class Ward {
+  - id : Long
+  - name : String
+  - zone : DeliveryZone
+  + isServed() : boolean
+  + assignZone(zone)
+  + removeFromService()
+}
+note right of Ward
+  zone = null nghĩa là phường
+  nằm ngoài phạm vi phục vụ
+end note
+
+Ward "*" --> "0..1" DeliveryZone : thuộc vùng
+@enduml

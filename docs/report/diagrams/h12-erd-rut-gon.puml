@@ -1,0 +1,68 @@
+@startuml h12-erd-rut-gon
+!include _style.iuml
+hide circle
+hide empty members
+left to right direction
+
+entity users {
+  * id <<PK>>
+}
+entity shops {
+  * id <<PK, FK>>
+  * ward_id <<FK>>
+}
+entity shippers {
+  * id <<PK, FK>>
+  zone_id <<FK>>
+}
+entity admins {
+  * id <<PK, FK>>
+}
+entity delivery_zones {
+  * id <<PK>>
+}
+entity wards {
+  * id <<PK>>
+  zone_id <<FK>>
+}
+entity price_configs {
+  * id <<PK>>
+  service_type <<UQ>>
+}
+entity orders {
+  * id <<PK>>
+  * shop_id <<FK>>
+  * pickup_ward_id <<FK>>
+  * delivery_ward_id <<FK>>
+  shipper_id <<FK>>
+  cod_remittance_id <<FK>>
+  settlement_id <<FK>>
+}
+entity order_status_histories {
+  * id <<PK>>
+  * order_id <<FK>>
+}
+entity cod_remittances {
+  * id <<PK>>
+  * shipper_id <<FK>>
+}
+entity settlements {
+  * id <<PK>>
+  * shop_id <<FK>>
+}
+
+users ||--o| shops
+users ||--o| shippers
+users ||--o| admins
+delivery_zones |o--o{ wards
+delivery_zones |o--o{ shippers
+wards ||--o{ shops
+wards ||--o{ orders : lấy / giao
+shops ||--o{ orders
+shippers |o--o{ orders
+orders ||--o{ order_status_histories
+shippers ||--o{ cod_remittances
+cod_remittances |o--o{ orders
+shops ||--o{ settlements
+settlements |o--o{ orders
+@enduml

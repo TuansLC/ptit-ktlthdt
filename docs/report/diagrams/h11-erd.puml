@@ -1,0 +1,146 @@
+@startuml h11-erd
+!include _style.iuml
+hide circle
+hide empty members
+
+entity "users" as users {
+  * id : BIGINT <<PK>>
+  --
+  * username : VARCHAR(50) <<UQ>>
+  * password_hash : VARCHAR(255)
+  * full_name : VARCHAR(100)
+  phone : VARCHAR(20)
+  * active : BIT
+  created_at : DATETIME
+}
+entity "shops" as shops {
+  * id : BIGINT <<PK, FK>>
+  --
+  * shop_name : VARCHAR(150)
+  * address : VARCHAR(255)
+  * ward_id : BIGINT <<FK>>
+  bank_name : VARCHAR(100)
+  bank_account_no : VARCHAR(30)
+  bank_account_holder : VARCHAR(100)
+}
+entity "shippers" as shippers {
+  * id : BIGINT <<PK, FK>>
+  --
+  vehicle_plate : VARCHAR(20)
+  zone_id : BIGINT <<FK>>
+}
+entity "admins" as admins {
+  * id : BIGINT <<PK, FK>>
+}
+entity "delivery_zones" as delivery_zones {
+  * id : BIGINT <<PK>>
+  --
+  * code : VARCHAR(10) <<UQ>>
+  * name : VARCHAR(100)
+  description : VARCHAR(255)
+}
+entity "wards" as wards {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<UQ>>
+  zone_id : BIGINT <<FK>>
+}
+entity "price_configs" as price_configs {
+  * id : BIGINT <<PK>>
+  --
+  * service_type : ENUM <<UQ>>
+  * same_zone_fee : BIGINT
+  * cross_zone_fee : BIGINT
+  * included_weight_gram : INT
+  * step_weight_gram : INT
+  * extra_fee_per_step : BIGINT
+  * max_weight_gram : INT
+  * surcharge : BIGINT
+}
+entity "orders" as orders {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UQ>>
+  * version : BIGINT
+  * shop_id : BIGINT <<FK>>
+  * pickup_address : VARCHAR(255)
+  * pickup_ward_id : BIGINT <<FK>>
+  * receiver_name : VARCHAR(100)
+  * receiver_phone : VARCHAR(20)
+  * receiver_address : VARCHAR(255)
+  * delivery_ward_id : BIGINT <<FK>>
+  * item_description : VARCHAR(255)
+  * weight_gram : INT
+  * cod_amount : BIGINT
+  * service_type : ENUM
+  * shipping_fee : BIGINT
+  note : VARCHAR(500)
+  * status : ENUM
+  shipper_id : BIGINT <<FK>>
+  * failed_attempts : INT
+  last_fail_reason : VARCHAR(500)
+  * collected_amount : BIGINT
+  delivered_at : DATETIME
+  finished_at : DATETIME
+  cod_remittance_id : BIGINT <<FK>>
+  settlement_id : BIGINT <<FK>>
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+entity "order_status_histories" as histories {
+  * id : BIGINT <<PK>>
+  --
+  * order_id : BIGINT <<FK>>
+  from_status : ENUM
+  * to_status : ENUM
+  * actor_name : VARCHAR(100)
+  actor_role : VARCHAR(30)
+  note : VARCHAR(500)
+  created_at : DATETIME
+}
+entity "cod_remittances" as remittances {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UQ>>
+  * shipper_id : BIGINT <<FK>>
+  * total_amount : BIGINT
+  * status : ENUM
+  reviewed_by : VARCHAR(100)
+  reviewed_at : DATETIME
+  note : VARCHAR(500)
+  created_at : DATETIME
+}
+entity "settlements" as settlements {
+  * id : BIGINT <<PK>>
+  --
+  code : VARCHAR(20) <<UQ>>
+  * shop_id : BIGINT <<FK>>
+  * total_cod : BIGINT
+  * total_fee : BIGINT
+  * payout_amount : BIGINT
+  * status : ENUM
+  bank_name : VARCHAR(100)
+  bank_account_no : VARCHAR(30)
+  bank_account_holder : VARCHAR(100)
+  payment_ref : VARCHAR(100)
+  paid_at : DATETIME
+  note : VARCHAR(500)
+  created_at : DATETIME
+}
+
+users ||--o| shops
+users ||--o| shippers
+users ||--o| admins
+delivery_zones |o--o{ wards
+delivery_zones |o--o{ shippers
+wards ||--o{ shops
+shops ||--o{ orders
+shippers |o--o{ orders
+wards ||--o{ orders : pickup_ward_id
+wards ||--o{ orders : delivery_ward_id
+orders ||--o{ histories
+shippers ||--o{ remittances
+remittances |o--o{ orders
+shops ||--o{ settlements
+settlements |o--o{ orders
+@enduml

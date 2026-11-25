@@ -1,0 +1,56 @@
+@startuml h02-lop-tong-quat
+!include _style.iuml
+hide members
+
+package "user" {
+  abstract class User
+  class Shop
+  class Shipper
+  class Admin
+  enum Role
+}
+package "zone" {
+  class DeliveryZone
+  class Ward
+}
+package "pricing" {
+  class PriceConfig
+  enum ServiceType
+  interface ShippingFeeStrategy
+  class ShippingFeeStrategyFactory
+}
+package "order" {
+  class Order
+  enum OrderStatus
+  interface OrderState
+  class OrderStatusHistory
+}
+package "finance" {
+  abstract class Voucher
+  class CodRemittance
+  class Settlement
+}
+
+User <|-- Shop
+User <|-- Shipper
+User <|-- Admin
+User ..> Role
+Ward "*" --> "0..1" DeliveryZone
+Shop "*" --> "1" Ward
+Shipper "*" --> "0..1" DeliveryZone
+Order "*" --> "1" Shop
+Order "*" --> "0..1" Shipper
+Order "*" --> "2" Ward : lấy / giao
+Order --> OrderStatus
+OrderStatus --> OrderState
+Order --> ServiceType
+OrderStatusHistory "*" --> "1" Order
+ShippingFeeStrategyFactory o--> ShippingFeeStrategy
+ShippingFeeStrategy ..> PriceConfig
+Voucher <|-- CodRemittance
+Voucher <|-- Settlement
+CodRemittance "*" --> "1" Shipper
+Settlement "*" --> "1" Shop
+CodRemittance "0..1" --> "*" Order
+Settlement "0..1" --> "*" Order
+@enduml

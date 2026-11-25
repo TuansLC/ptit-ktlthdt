@@ -1,0 +1,17 @@
+!pragma layout smetana
+skinparam dpi 170
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+skinparam ClassBorderColor #3b5b92
+skinparam ClassBackgroundColor #f4f7fc
+skinparam ClassHeaderBackgroundColor #dfe8f7
+skinparam PackageBorderColor #8a9bb8
+skinparam PackageBackgroundColor #fbfcfe
+skinparam NoteBackgroundColor #fff8dc
+skinparam NoteBorderColor #c9b458
+skinparam EntityBorderColor #3b5b92
+skinparam EntityBackgroundColor #f4f7fc

@@ -1,0 +1,57 @@
+@startuml h03-goi-user
+!include _style.iuml
+
+abstract class User {
+  - id : Long
+  - username : String
+  - passwordHash : String
+  - fullName : String
+  - phone : String
+  - active : boolean
+  - createdAt : LocalDateTime
+  + {abstract} getRole() : Role
+  + updateContact(fullName, phone)
+  + changePasswordHash(hash)
+  + activate()
+  + deactivate()
+}
+class Shop {
+  - shopName : String
+  - address : String
+  - ward : Ward
+  - bankName : String
+  - bankAccountNo : String
+  - bankAccountHolder : String
+  + getRole() : Role
+  + updateProfile(shopName, address, ward)
+  + updateBankAccount(bank, no, holder)
+  + hasBankAccount() : boolean
+}
+class Shipper {
+  - vehiclePlate : String
+  - zone : DeliveryZone
+  + getRole() : Role
+  + updateWorkInfo(plate, zone)
+  + covers(ward : Ward) : boolean
+}
+class Admin {
+  + getRole() : Role
+}
+enum Role {
+  SHOP
+  SHIPPER
+  ADMIN
+  - label : String
+  - homeUrl : String
+  + getAuthority() : String
+}
+class Ward
+class DeliveryZone
+
+User <|-- Shop
+User <|-- Shipper
+User <|-- Admin
+User ..> Role : getRole()
+Shop "*" --> "1" Ward : phường lấy hàng
+Shipper "*" --> "0..1" DeliveryZone : vùng phụ trách
+@enduml

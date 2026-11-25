@@ -1,0 +1,475 @@
+
+# CHƯƠNG 1. TỔNG QUAN BÀI TOÁN
+## 1.1. Mô tả bài toán
+P: Các shop bán hàng online quy mô nhỏ thường thuê một đơn vị vận chuyển nội thành để giao hàng và thu hộ tiền (COD) từ người mua. Đơn vị vận chuyển phải tiếp nhận nhiều đơn mỗi ngày, phân công shipper, theo dõi trạng thái từng đơn, giữ số tiền shipper thu được và định kỳ trả lại cho shop sau khi trừ phí vận chuyển. Nếu làm thủ công bằng sổ sách hoặc bảng tính, việc đối chiếu tiền giữa shipper, công ty và shop rất dễ sai sót.
+P: Đề tài xây dựng một hệ thống web quản lý toàn bộ quy trình trên. Phạm vi phục vụ là các phường nội thành Hà Nội theo địa giới hành chính 2 cấp (áp dụng từ 01/7/2025), được chia thành các vùng giao hàng do quản trị viên cấu hình. Phí vận chuyển được tính theo vùng lấy hàng, vùng giao hàng, khối lượng và loại dịch vụ.
+P: Báo cáo này trình bày thiết kế biểu đồ lớp (Chương 2) và lược đồ cơ sở dữ liệu (Chương 3) của hệ thống. Các biểu đồ được vẽ khớp với mã nguồn Java đã cài đặt; lược đồ cơ sở dữ liệu được sinh từ chính các lớp thực thể (xem Phụ lục).
+## 1.2. Tác nhân và chức năng
+TABLE: Các tác nhân của hệ thống | 4.2 11.8
+Tác nhân|Chức năng chính
+Shop (khách hàng gửi hàng)|Đăng ký, đăng nhập, đổi mật khẩu; cập nhật thông tin shop và tài khoản ngân hàng; tạo đơn giao hàng (hệ thống tự tính phí); tra cứu và theo dõi trạng thái đơn; hủy đơn khi chưa lấy hàng; xem phiếu đối soát và lịch sử thanh toán.
+Shipper|Xem đơn được phân công; xác nhận đã lấy hàng; xác nhận giao thành công kèm số tiền đã thu, hoặc báo giao thất bại kèm lý do; xác nhận đã trả hàng hoàn cho shop; lập phiếu nộp tiền COD và xem lịch sử nộp.
+Quản trị viên (kiêm điều phối)|Quản lý tài khoản shop, shipper (khóa, mở khóa, sửa, đặt lại mật khẩu); quản lý vùng giao hàng và bảng giá cước; phân công shipper; cho giao lại hoặc chuyển hoàn đơn thất bại; xác nhận phiếu nộp COD; lập phiếu đối soát và ghi nhận thanh toán cho shop; xem thống kê.
+END
+## 1.3. Quy tắc nghiệp vụ ảnh hưởng đến thiết kế
+P: Các quy tắc dưới đây quyết định cách tổ chức lớp và các ràng buộc trong cơ sở dữ liệu:
+B: Phường chưa được gán vào vùng giao hàng nằm ngoài phạm vi phục vụ; shop không tạo được đơn lấy hoặc giao tại phường đó.
+B: Phí vận chuyển = cước cơ bản (theo tuyến cùng vùng hoặc khác vùng) + cước vượt cân (theo từng bước 500 g, làm tròn lên) + phụ phí dịch vụ. Dịch vụ Hỏa tốc chỉ nhận đơn lấy và giao trong cùng một vùng, tối đa 5 kg.
+B: Shop chỉ hủy được đơn trước khi shipper lấy hàng.
+B: Khi giao thành công, số tiền shipper nhập phải đúng bằng tiền thu hộ của đơn.
+B: Mỗi đơn được giao thất bại tối đa 3 lần; sau đó chỉ có thể chuyển hoàn về shop.
+B: Shipper lập phiếu nộp toàn bộ tiền COD đang giữ; quản trị viên xác nhận hoặc từ chối phiếu.
+B: Đơn giao thành công chỉ được đối soát khi tiền COD của đơn đã được xác nhận nộp về công ty. Đơn hoàn được đối soát ngay và shop vẫn chịu phí vận chuyển.
+B: Tiền trả shop = tổng tiền thu hộ của các đơn giao thành công − tổng phí vận chuyển của mọi đơn trong phiếu.
+## 1.4. Công nghệ và kiến trúc
+P: Hệ thống viết bằng Java 17 trên nền Spring Boot 3, dùng Spring Data JPA (Hibernate) để truy cập dữ liệu, Spring Security để đăng nhập và phân quyền, giao diện Thymeleaf kết hợp Bootstrap 5, cơ sở dữ liệu MySQL. Mã nguồn được chia thành các tầng như Hình 1.1.
+IMG: h01-kien-truc.png | Kiến trúc phân tầng của hệ thống | 10.5 | 13
+P: Biểu đồ lớp ở Chương 2 tập trung vào tầng nghiệp vụ (domain), vì đây là nơi chứa các lớp mô tả trực tiếp bài toán và các quy tắc nghiệp vụ. Tầng dịch vụ được trình bày ở mục 2.8. Tầng giao diện và tầng truy cập dữ liệu chủ yếu là mã khung của Spring nên không đưa vào biểu đồ lớp.
+
+# CHƯƠNG 2. THIẾT KẾ BIỂU ĐỒ LỚP
+## 2.1. Nguyên tắc thiết kế và ký hiệu
+P: Biểu đồ lớp được thiết kế theo các nguyên tắc sau:
+B: Đóng gói:: lớp nghiệp vụ tự giữ quy tắc của mình. Ví dụ lớp Order không có setter công khai; trạng thái đơn chỉ thay đổi qua các phương thức nghiệp vụ như pickUp() hay deliverSuccess().
+B: Trừu tượng và kế thừa:: phần dùng chung được đưa lên lớp trừu tượng: User cho ba loại tài khoản, Voucher cho hai loại phiếu tiền.
+B: Đa hình:: thay chuỗi lệnh if/switch theo loại bằng lớp riêng cho từng trường hợp: mỗi trạng thái đơn là một lớp (mẫu State), mỗi dịch vụ có một cách tính phí (mẫu Strategy).
+B: Tách trách nhiệm:: lớp dịch vụ chỉ điều phối (kiểm tra quyền sở hữu, mở giao dịch, phát sự kiện), còn quy tắc nghiệp vụ nằm trong lớp domain.
+TABLE: Ký hiệu dùng trong biểu đồ lớp | 6 10
+Ký hiệu|Ý nghĩa
+Biểu tượng C, A, I, E cạnh tên lớp|Lớp thường, lớp trừu tượng, interface, enum
+Tên in nghiêng|Lớp hoặc phương thức trừu tượng
++  -  #  ~ trước thành phần|Phạm vi truy cập public, private, protected, package
+Thành phần gạch chân|Thành phần static (của lớp, không của đối tượng)
+«record», «service», «listener»|Khuôn mẫu (stereotype): lớp dữ liệu bất biến, lớp dịch vụ, lớp lắng nghe sự kiện
+Đường liền, đầu tam giác rỗng|Kế thừa (extends)
+Đường nét đứt, đầu tam giác rỗng|Hiện thực interface (implements)
+Đường liền, đầu mũi tên|Kết hợp (association), kèm bội số ở hai đầu: 1, 0..1, *
+Đường liền, đầu hình thoi rỗng|Kết tập (aggregation): đối tượng tổng thể gồm nhiều đối tượng thành phần
+Đường nét đứt, đầu mũi tên|Phụ thuộc (dependency): dùng làm tham số, kết quả hoặc tạo ra
+END
+## 2.2. Biểu đồ lớp tổng quát
+P: Hình 2.1 cho thấy các lớp chính của tầng nghiệp vụ và quan hệ giữa chúng (đã ẩn thuộc tính và phương thức). Các lớp được nhóm thành 5 gói theo mảng nghiệp vụ như Bảng 2.2.
+IMG: h02-lop-tong-quat.png | Biểu đồ lớp tổng quát của tầng nghiệp vụ | 16 | 21
+TABLE: Các gói trong tầng nghiệp vụ | 2.2 7.8 6
+Gói|Các lớp|Vai trò
+user|User, Shop, Shipper, Admin, Role|Tài khoản người dùng và vai trò
+zone|DeliveryZone, Ward|Phạm vi phục vụ: vùng giao hàng và phường
+pricing|PriceConfig, ServiceType, ShippingFeeStrategy và các lớp cài đặt, ShippingFeeStrategyFactory, FeeRequest, FeeQuote|Bảng giá và cách tính phí vận chuyển
+order|Order, OrderStatus, OrderAction, OrderState và các lớp trạng thái, OrderStatusHistory|Đơn hàng, vòng đời đơn và nhật ký trạng thái
+finance|Voucher, CodRemittance, Settlement, RemittanceStatus, SettlementStatus|Tiền thu hộ: phiếu nộp COD và phiếu đối soát
+END
+P: Lớp Order là trung tâm của biểu đồ: mỗi đơn thuộc một Shop, được giao cho tối đa một Shipper, có một phường lấy hàng và một phường giao hàng. Trạng thái của đơn được biểu diễn bằng OrderStatus, mỗi giá trị gắn với một đối tượng OrderState xử lý hành vi. Ở phía tài chính, phiếu nộp COD (CodRemittance) gom các đơn của một shipper, phiếu đối soát (Settlement) gom các đơn của một shop; cả hai cùng kế thừa lớp trừu tượng Voucher.
+## 2.3. Gói user – Tài khoản người dùng
+IMG: h03-goi-user.png | Biểu đồ lớp gói user | 15 | 16
+TABLE: Mô tả các lớp trong gói user | 2.4 3.4 10.2
+Lớp|Loại|Ý nghĩa trong bài toán
+User|Lớp trừu tượng, thực thể|Phần chung của mọi tài khoản: tên đăng nhập, mật khẩu đã băm BCrypt, họ tên, số điện thoại, trạng thái hoạt động, ngày tạo. Khai báo phương thức trừu tượng getRole() để mỗi lớp con tự cho biết vai trò. Không thể tạo trực tiếp đối tượng User.
+Shop|Thực thể, kế thừa User|Chủ shop gửi hàng. Lưu tên shop, địa chỉ và phường lấy hàng mặc định, tài khoản ngân hàng nhận tiền đối soát. Phương thức hasBankAccount() được dùng khi lập phiếu đối soát.
+Shipper|Thực thể, kế thừa User|Nhân viên lấy và giao hàng. Lưu biển số xe và vùng phụ trách. Phương thức covers(ward) cho biết shipper có phụ trách vùng chứa phường đó hay không, dùng để gợi ý khi phân công.
+Admin|Thực thể, kế thừa User|Quản trị viên kiêm điều phối đơn hàng. Không có thuộc tính riêng; lớp tồn tại để phân biệt vai trò bằng kiểu đối tượng.
+Role|Enum|Ba vai trò SHOP, SHIPPER, ADMIN, kèm tên hiển thị, trang chủ sau khi đăng nhập và tên quyền theo quy ước của Spring Security (ROLE_SHOP...).
+END
+P: Tính đa hình thể hiện ở phương thức getRole(): phần đăng nhập và phân quyền chỉ gọi user.getRole() mà không cần biết đối tượng cụ thể thuộc lớp Shop, Shipper hay Admin. Thông tin liên hệ chỉ đổi qua updateContact(), mật khẩu chỉ đổi qua changePasswordHash() với giá trị đã băm, nên lớp User không lộ setter tùy ý.
+## 2.4. Gói zone – Phạm vi phục vụ
+IMG: h04-goi-zone.png | Biểu đồ lớp gói zone | 11 | 10
+TABLE: Mô tả các lớp trong gói zone | 2.6 2.2 11.2
+Lớp|Loại|Ý nghĩa trong bài toán
+DeliveryZone|Thực thể|Vùng giao hàng do quản trị viên định nghĩa, ví dụ V1 – Trung tâm, V2 – Nội thành mở rộng. Phương thức sameAs() so sánh hai vùng, dùng để xác định tuyến cùng vùng hay khác vùng khi tính phí.
+Ward|Thực thể|Phường của Hà Nội theo địa giới 2 cấp. Mỗi phường thuộc tối đa một vùng; zone = null nghĩa là phường nằm ngoài phạm vi phục vụ (isServed() trả về false). Quản trị viên đổi vùng qua assignZone() hoặc removeFromService().
+END
+P: Việc tách vùng giao hàng thành một lớp riêng giúp hệ thống không phụ thuộc vào danh sách quận cũ. Khi địa giới thay đổi, quản trị viên chỉ cần gán lại phường vào vùng trên giao diện, không phải sửa mã nguồn.
+## 2.5. Gói pricing – Tính phí vận chuyển
+P: Gói pricing áp dụng ba mẫu thiết kế: Strategy (mỗi dịch vụ một cách tính phí), Template Method (cố định trình tự tính phí ở lớp cha) và Factory (chọn cách tính phí theo loại dịch vụ).
+IMG: h05-goi-pricing.png | Biểu đồ lớp gói pricing (Strategy, Template Method, Factory) | 16 | 21
+TABLE: Mô tả các lớp trong gói pricing | 4.6 2.6 8.8
+Lớp|Loại|Ý nghĩa trong bài toán
+ServiceType|Enum|Loại dịch vụ: TIEU_CHUAN (tiêu chuẩn), HOA_TOC (hỏa tốc).
+PriceConfig|Thực thể|Bảng giá của một dịch vụ: cước cùng vùng, cước khác vùng, khối lượng đã gồm trong cước cơ bản, bước vượt cân, phí mỗi bước, khối lượng tối đa, phụ phí. Phương thức update() kiểm tra giá trị hợp lệ trước khi gán.
+FeeRequest|Record|Dữ liệu đầu vào khi tính phí: phường lấy, phường giao, khối lượng, dịch vụ. isSameZone() cho biết tuyến cùng vùng.
+FeeQuote|Record|Kết quả tính phí, giữ riêng cước cơ bản, cước vượt cân, phụ phí để hiển thị chi tiết; total() trả về tổng phí.
+ShippingFeeStrategy|Interface|Hợp đồng chung của mọi cách tính phí (vai trò Strategy).
+AbstractShippingFeeStrategy|Lớp trừu tượng|Template Method: calculate() là final, cố định trình tự kiểm tra chung → kiểm tra riêng → cước cơ bản → cước vượt cân → phụ phí. Lớp con chỉ ghi đè validateSpecific() và surcharge().
+StandardFeeStrategy|Lớp cụ thể|Cách tính phí dịch vụ tiêu chuẩn, không có phụ phí.
+ExpressFeeStrategy|Lớp cụ thể|Cách tính phí dịch vụ hỏa tốc: từ chối tuyến khác vùng, cộng phụ phí cố định.
+ShippingFeeStrategyFactory|Lớp|Factory: nhận danh sách mọi strategy, trả về strategy theo ServiceType; báo lỗi ngay khi khởi động nếu có dịch vụ chưa có cách tính.
+PricingService|Lớp dịch vụ|Lấy PriceConfig của dịch vụ, chọn strategy qua factory rồi giao cho strategy tính phí.
+END
+P: Ví dụ:: đơn dịch vụ tiêu chuẩn, lấy và giao cùng vùng, nặng 2.600 g. Cước cơ bản 20.000 đ (đã gồm 2.000 g); phần vượt 600 g tương ứng 2 bước 500 g × 2.500 đ = 5.000 đ; không có phụ phí. Tổng phí 25.000 đ.
+P: Thiết kế này tuân theo nguyên lý đóng/mở: muốn thêm dịch vụ mới (ví dụ Giao tiết kiệm) chỉ cần thêm một giá trị ServiceType, một lớp con của AbstractShippingFeeStrategy và một dòng bảng giá, không phải sửa các lớp đã có.
+## 2.6. Gói order – Đơn hàng và vòng đời đơn
+IMG: h06-goi-order.png | Biểu đồ lớp gói order | 15 | 19
+TABLE: Mô tả các lớp trong gói order | 3.4 2.6 10
+Lớp|Loại|Ý nghĩa trong bài toán
+Order|Thực thể|Đơn giao hàng, lớp trung tâm của hệ thống. Lưu thông tin lấy hàng, người nhận, hàng hóa, tiền thu hộ, phí, trạng thái, shipper, số lần thất bại, tiền đã thu, các mốc thời gian và phiếu tiền chứa đơn. Các thao tác đổi trạng thái được ủy quyền cho đối tượng trạng thái hiện tại.
+OrderStatus|Enum|8 trạng thái của đơn. Mỗi giá trị gắn với một đối tượng OrderState xử lý hành vi, kèm nhãn và màu hiển thị. Giá trị enum được lưu xuống cơ sở dữ liệu.
+OrderAction|Enum|8 thao tác làm đổi trạng thái (phân công, hủy, lấy hàng...). Dùng để hỏi trạng thái hiện tại cho phép thao tác nào, từ đó ẩn hoặc hiện nút trên giao diện.
+OrderState|Interface|Khai báo các thao tác trên đơn; mỗi trạng thái cài đặt theo cách riêng (vai trò State).
+AbstractOrderState|Lớp trừu tượng|Cài đặt mặc định: mọi thao tác đều bị từ chối bằng BusinessException với thông báo rõ ràng. Lớp con chỉ ghi đè các thao tác hợp lệ.
+Các lớp trạng thái|Lớp cụ thể|WaitingAssignmentState, WaitingPickupState, DeliveringState, FailedDeliveryState, ReturningState, FinalState (xem Bảng 2.9).
+OrderStatusHistory|Thực thể|Nhật ký mỗi lần đơn đổi trạng thái: từ trạng thái, sang trạng thái, người thao tác, vai trò, ghi chú, thời điểm. Dòng đầu tiên (fromStatus rỗng) ứng với lúc tạo đơn.
+END
+TABLE: Thuộc tính chính của lớp Order | 5.6 3.6 6.8
+Thuộc tính|Kiểu|Ý nghĩa
+code|String|Mã đơn dạng GH + yyMMdd + 5 chữ số, sinh sau khi lưu
+version|long|Số phiên bản cho khóa lạc quan, tránh hai người cùng sửa một đơn
+shop|Shop|Shop gửi hàng
+pickupAddress, pickupWard|String, Ward|Địa chỉ và phường lấy hàng
+receiverName, receiverPhone, receiverAddress|String|Thông tin người nhận
+deliveryWard|Ward|Phường giao hàng
+itemDescription, weightGram|String, int|Nội dung và khối lượng hàng (gram)
+codAmount|long|Tiền shipper phải thu hộ (0 nếu không thu hộ)
+serviceType, shippingFee|ServiceType, long|Dịch vụ và phí vận chuyển tính lúc tạo đơn
+status|OrderStatus|Trạng thái hiện tại
+shipper|Shipper|Shipper được phân công (rỗng khi chưa phân công)
+failedAttempts, lastFailReason|int, String|Số lần giao thất bại và lý do gần nhất
+collectedAmount, deliveredAt|long, LocalDateTime|Tiền đã thu và thời điểm giao thành công
+finishedAt|LocalDateTime|Thời điểm đơn kết thúc, dùng cho thống kê theo ngày
+codRemittance, settlement|CodRemittance, Settlement|Phiếu nộp COD và phiếu đối soát chứa đơn
+createdAt, updatedAt|LocalDateTime|Thời điểm tạo và cập nhật
+END
+TABLE: Phương thức chính của lớp Order | 6.8 9.2
+Phương thức|Ý nghĩa
+assignShipper(shipper)|Phân công hoặc đổi shipper
+cancel()|Hủy đơn (chỉ hợp lệ trước khi lấy hàng)
+pickUp()|Shipper xác nhận đã lấy hàng
+deliverSuccess(collectedAmount)|Xác nhận giao thành công; số tiền phải bằng codAmount
+deliverFail(reason)|Báo giao thất bại, tăng failedAttempts
+retryDelivery(shipper)|Cho giao lại khi chưa quá 3 lần thất bại
+startReturn(), confirmReturned()|Chuyển hoàn và xác nhận đã trả hàng cho shop
+allowedActions(), allows(action)|Các thao tác hợp lệ ở trạng thái hiện tại
+isCodPendingRemittance()|Đơn đã thu tiền nhưng shipper chưa nộp
+isReadyForSettlement(), settlementCod()|Đơn đủ điều kiện đối soát; số tiền COD trả shop của đơn
+attachToRemittance(), attachToSettlement()|Gắn đơn vào phiếu nộp COD, phiếu đối soát (kiểm tra điều kiện trước)
+moveTo(), setShipper(), markDelivered(), recordFailedAttempt()|Hàm thay đổi nội bộ, phạm vi package (~), chỉ các lớp trạng thái cùng gói gọi được
+END
+### 2.6.1. Mẫu State cho vòng đời đơn hàng
+P: Hình 2.6 mô tả mẫu State. Mỗi phương thức thao tác của Order chỉ có một dòng: gọi phương thức cùng tên trên đối tượng trạng thái hiện tại (status.getState()). Lớp trạng thái kiểm tra điều kiện, cập nhật dữ liệu nội bộ của đơn rồi chuyển sang trạng thái kế tiếp bằng moveTo(). Nhờ vậy lớp Order không chứa chuỗi if/switch theo trạng thái, và quy tắc của mỗi trạng thái nằm gọn trong một lớp.
+IMG: h07-state-pattern.png | Mẫu State áp dụng cho lớp Order | 16 | 15
+P: Biểu đồ trạng thái ở Hình 2.7 cho thấy các chuyển trạng thái mà các lớp State cho phép. Bảng 2.9 đối chiếu từng trạng thái với lớp xử lý tương ứng.
+IMG: h08-trang-thai-don.png | Biểu đồ trạng thái của đơn hàng | 12 | 14
+TABLE: Trạng thái đơn và lớp xử lý tương ứng | 3.6 4 4.6 3.8
+Trạng thái|Lớp xử lý|Thao tác hợp lệ|Trạng thái kế tiếp
+CHO_PHAN_CONG|WaitingAssignmentState|ASSIGN, CANCEL|CHO_LAY_HANG, DA_HUY
+CHO_LAY_HANG|WaitingPickupState|ASSIGN (đổi shipper), CANCEL, PICK_UP|CHO_LAY_HANG, DA_HUY, DANG_GIAO
+DANG_GIAO|DeliveringState|DELIVER_SUCCESS, DELIVER_FAIL|GIAO_THANH_CONG, GIAO_THAT_BAI
+GIAO_THAT_BAI|FailedDeliveryState|RETRY (khi số lần thất bại < 3), START_RETURN|DANG_GIAO, DANG_HOAN
+DANG_HOAN|ReturningState|CONFIRM_RETURNED|DA_HOAN
+GIAO_THANH_CONG, DA_HOAN, DA_HUY|FinalState|Không có|Trạng thái kết thúc
+END
+## 2.7. Gói finance – Nộp COD và đối soát
+IMG: h09-goi-finance.png | Biểu đồ lớp gói finance | 16 | 15
+TABLE: Mô tả các lớp trong gói finance | 3.2 3.6 9.2
+Lớp|Loại|Ý nghĩa trong bài toán
+Voucher|Lớp trừu tượng (@MappedSuperclass)|Phần chung của phiếu tiền: mã phiếu, ngày tạo, ghi chú và cách sinh mã (tiền tố + yyMMdd + 5 chữ số). Lớp con cài đặt codePrefix(), getAmount(), getStatusLabel(), getStatusBadge().
+CodRemittance|Thực thể, kế thừa Voucher|Phiếu nộp COD: một shipper nộp tiền thu hộ của nhiều đơn về công ty (mã NP...). Hàm khởi tạo kiểm tra từng đơn thuộc shipper và chưa nộp, rồi cộng tổng tiền. confirm() xác nhận; reject() từ chối, gỡ các đơn khỏi phiếu để shipper lập phiếu mới.
+Settlement|Thực thể, kế thừa Voucher|Phiếu đối soát với một shop (mã DS...): tổng COD, tổng phí, tiền trả shop. Chụp lại thông tin ngân hàng của shop tại thời điểm lập phiếu. markPaid() ghi nhận mã giao dịch chuyển khoản; isShopOwing() cho biết shop phải trả ngược khi số tiền âm.
+RemittanceStatus|Enum|CHO_XAC_NHAN, DA_XAC_NHAN, TU_CHOI.
+SettlementStatus|Enum|CHO_THANH_TOAN, DA_THANH_TOAN.
+END
+P: Hàm khởi tạo của Settlement tính toán và kiểm tra trước, chỉ gắn đơn vào phiếu khi mọi điều kiện đều đạt (đơn thuộc shop, đủ điều kiện đối soát, shop có tài khoản ngân hàng nếu được nhận tiền). Thông tin ngân hàng được chụp lại vào phiếu để sau này shop đổi tài khoản thì lịch sử thanh toán vẫn đúng.
+## 2.8. Tầng dịch vụ và mẫu Observer
+P: Các lớp dịch vụ điều phối ca sử dụng: lấy dữ liệu qua repository, kiểm tra quyền sở hữu, gọi phương thức nghiệp vụ của lớp domain trong một giao dịch. Mỗi lần đơn đổi trạng thái, OrderService phát sự kiện OrderStatusChangedEvent; lớp OrderHistoryRecorder lắng nghe sự kiện và ghi nhật ký (mẫu Observer). Nhờ vậy OrderService không phụ thuộc vào việc ghi nhật ký; muốn thêm thông báo email hay SMS chỉ cần thêm một lớp lắng nghe mới.
+IMG: h10-tang-dich-vu.png | Các lớp tầng dịch vụ và mẫu Observer | 16 | 14
+TABLE: Mô tả các lớp tầng dịch vụ | 4.6 11.4
+Lớp|Trách nhiệm
+OrderService|Ca sử dụng của đơn: tạo đơn (gọi PricingService tính phí), phân công, lấy hàng, giao, báo thất bại, giao lại, chuyển hoàn. Kiểm tra đơn thuộc đúng shop hoặc shipper, gọi phương thức của Order, phát sự kiện đổi trạng thái.
+PricingService|Tính phí vận chuyển và quản lý bảng giá.
+AccountService|Đăng ký shop, tạo và sửa shipper, đổi và đặt lại mật khẩu, khóa và mở khóa tài khoản.
+ZoneService|Quản lý vùng giao hàng, gán phường vào vùng.
+RemittanceService|Lập, xác nhận, từ chối phiếu nộp COD.
+SettlementService|Gom đơn đủ điều kiện, lập phiếu đối soát, ghi nhận thanh toán.
+StatisticsService|Thống kê số đơn và doanh thu theo ngày đơn kết thúc.
+OrderStatusChangedEvent|Sự kiện đổi trạng thái (record): đơn, trạng thái cũ, trạng thái mới, người thao tác, ghi chú.
+OrderHistoryRecorder|Observer: nhận sự kiện và lưu OrderStatusHistory trong cùng giao dịch.
+END
+## 2.9. Tổng hợp quan hệ giữa các lớp
+TABLE: Quan hệ giữa các lớp | 3.6 3.6 2.4 1.8 4.6
+Lớp nguồn|Lớp đích|Loại quan hệ|Bội số|Ý nghĩa
+Shop, Shipper, Admin|User|Kế thừa|–|Ba loại tài khoản dùng chung thuộc tính của User
+CodRemittance, Settlement|Voucher|Kế thừa|–|Hai loại phiếu dùng chung mã, ngày tạo, ghi chú
+AbstractOrderState|OrderState|Hiện thực|–|Cài đặt mặc định cho mọi trạng thái
+6 lớp trạng thái|AbstractOrderState|Kế thừa|–|Mỗi lớp xử lý một trạng thái
+AbstractShippingFeeStrategy|ShippingFeeStrategy|Hiện thực|–|Khung tính phí chung
+StandardFeeStrategy, ExpressFeeStrategy|AbstractShippingFeeStrategy|Kế thừa|–|Hai cách tính phí cụ thể
+Ward|DeliveryZone|Kết hợp|* – 0..1|Phường thuộc tối đa một vùng
+Shop|Ward|Kết hợp|* – 1|Phường lấy hàng mặc định của shop
+Shipper|DeliveryZone|Kết hợp|* – 0..1|Vùng shipper phụ trách
+Order|Shop|Kết hợp|* – 1|Shop gửi đơn
+Order|Shipper|Kết hợp|* – 0..1|Shipper được phân công
+Order|Ward|Kết hợp (2 quan hệ)|* – 1|Phường lấy hàng và phường giao hàng
+Order|OrderStatus|Kết hợp|* – 1|Trạng thái hiện tại
+OrderStatus|OrderState|Kết hợp|1 – 1|Mỗi trạng thái có một đối tượng xử lý
+OrderStatusHistory|Order|Kết hợp|* – 1|Nhật ký thuộc về một đơn
+CodRemittance|Shipper|Kết hợp|* – 1|Shipper lập phiếu nộp
+CodRemittance|Order|Kết tập|0..1 – *|Phiếu gồm nhiều đơn; mỗi đơn thuộc tối đa một phiếu nộp
+Settlement|Shop|Kết hợp|* – 1|Shop được đối soát
+Settlement|Order|Kết tập|0..1 – *|Phiếu gồm nhiều đơn; mỗi đơn thuộc tối đa một phiếu đối soát
+ShippingFeeStrategyFactory|ShippingFeeStrategy|Kết tập|1 – *|Factory giữ các strategy
+ShippingFeeStrategy|FeeRequest, FeeQuote, PriceConfig|Phụ thuộc|–|Dùng làm tham số và kết quả
+END
+## 2.10. Tổng hợp nguyên lý hướng đối tượng và mẫu thiết kế
+TABLE: Nguyên lý hướng đối tượng và mẫu thiết kế đã áp dụng | 3.2 5.6 7.2
+Nguyên lý / mẫu|Lớp áp dụng|Lợi ích
+Đóng gói|Order, User, PriceConfig, CodRemittance, Settlement|Dữ liệu chỉ đổi qua phương thức nghiệp vụ có kiểm tra; không thể tạo trạng thái sai từ bên ngoài
+Trừu tượng, kế thừa|User và 3 lớp con; Voucher và 2 lớp con|Phần chung viết một lần, lớp con chỉ bổ sung phần riêng
+Đa hình|User.getRole(), Voucher.getAmount(), OrderState, ShippingFeeStrategy|Cùng một lời gọi, mỗi lớp xử lý theo cách riêng
+State|OrderState và 6 lớp trạng thái|Quy tắc từng trạng thái tách riêng, không có if/switch theo trạng thái
+Strategy|ShippingFeeStrategy và 2 lớp cài đặt|Thêm dịch vụ mới không sửa mã cũ (nguyên lý đóng/mở)
+Template Method|AbstractShippingFeeStrategy.calculate()|Cố định trình tự tính phí, lớp con chỉ ghi đè bước khác biệt
+Factory|ShippingFeeStrategyFactory|Tách việc chọn cách tính phí khỏi nơi sử dụng
+Observer|OrderStatusChangedEvent, OrderHistoryRecorder|Ghi nhật ký tách khỏi nghiệp vụ đơn; dễ thêm thông báo
+END
+
+# CHƯƠNG 3. THIẾT KẾ LƯỢC ĐỒ CƠ SỞ DỮ LIỆU
+## 3.1. Chuyển từ biểu đồ lớp sang lược đồ quan hệ
+P: Lược đồ cơ sở dữ liệu được ánh xạ từ các lớp thực thể của tầng nghiệp vụ bằng JPA/Hibernate theo các quy tắc sau:
+B: Mỗi lớp thực thể:: ứng với một bảng; mỗi thuộc tính kiểu đơn giản ứng với một cột; khóa chính là cột id tự tăng.
+B: Kế thừa User:: dùng chiến lược JOINED. Bảng users chứa thuộc tính chung; các bảng shops, shippers, admins chứa thuộc tính riêng và dùng chung khóa chính với users. Cách này tránh nhiều cột rỗng (so với gộp một bảng) và vẫn giữ một bảng users duy nhất để đăng nhập, bảo đảm tên đăng nhập không trùng trên toàn hệ thống.
+B: Kế thừa Voucher:: Voucher là @MappedSuperclass nên không có bảng riêng; các cột chung (id, code, created_at, note) được đưa vào cả hai bảng cod_remittances và settlements. Hai loại phiếu không bao giờ truy vấn chung nên không cần bảng cha.
+B: Quan hệ nhiều – một:: được biểu diễn bằng khóa ngoại đặt ở bảng phía nhiều. Quan hệ không bắt buộc (bội số 0..1) dùng khóa ngoại cho phép NULL.
+B: Enum:: lưu bằng tên hằng (ENUM trong MySQL), không lưu số thứ tự, để thêm hoặc đổi thứ tự hằng không làm sai dữ liệu cũ.
+B: Lớp chỉ có hành vi:: (OrderState và các lớp trạng thái, các strategy, factory) và lớp dữ liệu tạm (FeeRequest, FeeQuote) không được lưu. Kết quả tính phí được lưu vào cột orders.shipping_fee.
+TABLE: Ánh xạ lớp sang bảng | 5.6 4.8 5.6
+Lớp|Bảng|Ghi chú
+User|users|Bảng cha của chiến lược JOINED
+Shop, Shipper, Admin|shops, shippers, admins|Khóa chính đồng thời là khóa ngoại tới users.id
+DeliveryZone, Ward|delivery_zones, wards|
+PriceConfig|price_configs|Mỗi dịch vụ một dòng
+Order|orders|
+OrderStatusHistory|order_status_histories|
+CodRemittance, Settlement|cod_remittances, settlements|Mỗi bảng chứa thêm các cột chung của Voucher
+Voucher|(không có bảng)|@MappedSuperclass
+Role, OrderStatus, ServiceType, RemittanceStatus, SettlementStatus|(không có bảng)|Lưu thành cột ENUM trong bảng sử dụng; Role suy ra từ bảng con chứa tài khoản
+OrderState, các strategy, FeeRequest, FeeQuote|(không có bảng)|Lớp hành vi hoặc dữ liệu tạm
+END
+TABLE: Ánh xạ kiểu dữ liệu | 5 3.4 7.6
+Kiểu Java|Kiểu MySQL|Ghi chú
+Long (khóa chính, khóa ngoại)|BIGINT|Khóa chính dùng AUTO_INCREMENT
+String|VARCHAR(n)|Độ dài khai báo bằng @Column(length = n)
+int (khối lượng, số lần)|INT|Khối lượng tính bằng gram
+long (tiền)|BIGINT|Tiền tính bằng đồng, số nguyên, tránh sai số của số thực
+boolean|BIT|
+LocalDateTime|DATETIME(6)|
+enum|ENUM(...)|Lưu tên hằng
+END
+## 3.2. Lược đồ ERD
+P: Hình 3.1 là lược đồ rút gọn, chỉ giữ khóa chính và khóa ngoại để thấy rõ các quan hệ. Hình 3.2 là lược đồ đầy đủ các cột. Lược đồ dùng ký hiệu chân chim (crow's foot) như Bảng 3.3.
+IMG: h12-erd-rut-gon.png | Lược đồ ERD rút gọn (khóa chính và khóa ngoại) | 16 | 21
+TABLE: Ký hiệu dùng trong lược đồ ERD | 7 9
+Ký hiệu|Ý nghĩa
+PK, FK, UQ|Khóa chính, khóa ngoại, ràng buộc duy nhất
+Dấu * trước tên cột|Cột bắt buộc (NOT NULL)
+Hai vạch ngang ở đầu đường nối|Đúng một
+Một vòng tròn và một vạch ngang|Không hoặc một
+Một vòng tròn và hình chân chim|Không hoặc nhiều
+END
+IMG: h11-erd.png | Lược đồ ERD đầy đủ | 16 | 22.5
+## 3.3. Mô tả các bảng
+P: Hệ thống có 12 bảng, chia thành 4 nhóm: tài khoản (users, shops, shippers, admins), cấu hình (delivery_zones, wards, price_configs), đơn hàng (orders, order_status_histories) và tài chính (cod_remittances, settlements). Mỗi bảng dưới đây được mô tả theo cột, kiểu dữ liệu, ràng buộc và ý nghĩa.
+### 3.3.1. Bảng users – Tài khoản
+P: Lưu thông tin đăng nhập dùng chung cho mọi vai trò. Vai trò của tài khoản được xác định bằng việc mã tài khoản có mặt trong bảng shops, shippers hay admins.
+TABLE: Bảng users | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã tài khoản, dùng chung cho bảng con
+username|VARCHAR(50)|NOT NULL, UNIQUE|Tên đăng nhập, duy nhất toàn hệ thống
+password_hash|VARCHAR(255)|NOT NULL|Mật khẩu đã băm bằng BCrypt; không lưu mật khẩu gốc
+full_name|VARCHAR(100)|NOT NULL|Họ tên
+phone|VARCHAR(20)||Số điện thoại liên hệ
+active|BIT|NOT NULL|1 = đang hoạt động, 0 = bị khóa (không đăng nhập được)
+created_at|DATETIME(6)||Thời điểm tạo tài khoản
+END
+### 3.3.2. Bảng shops – Shop gửi hàng
+P: Lưu thông tin riêng của tài khoản shop, quan hệ 1 – 1 với users qua khóa chính dùng chung.
+TABLE: Bảng shops | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, FK → users.id|Trùng mã tài khoản trong bảng users
+shop_name|VARCHAR(150)|NOT NULL|Tên shop
+address|VARCHAR(255)|NOT NULL|Địa chỉ lấy hàng mặc định (số nhà, đường)
+ward_id|BIGINT|NOT NULL, FK → wards.id|Phường lấy hàng mặc định
+bank_name|VARCHAR(100)||Ngân hàng nhận tiền đối soát
+bank_account_no|VARCHAR(30)||Số tài khoản
+bank_account_holder|VARCHAR(100)||Tên chủ tài khoản
+END
+### 3.3.3. Bảng shippers – Shipper
+TABLE: Bảng shippers | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, FK → users.id|Trùng mã tài khoản trong bảng users
+vehicle_plate|VARCHAR(20)||Biển số xe
+zone_id|BIGINT|FK → delivery_zones.id, cho phép NULL|Vùng phụ trách; NULL nghĩa là không cố định vùng
+END
+### 3.3.4. Bảng admins – Quản trị viên
+P: Chỉ có cột id (PK, FK → users.id). Bảng tồn tại để đánh dấu tài khoản có vai trò quản trị viên, đúng với lớp Admin không có thuộc tính riêng.
+### 3.3.5. Bảng delivery_zones – Vùng giao hàng
+TABLE: Bảng delivery_zones | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã vùng (khóa kỹ thuật)
+code|VARCHAR(10)|NOT NULL, UNIQUE|Mã vùng hiển thị, ví dụ V1, V2
+name|VARCHAR(100)|NOT NULL|Tên vùng, ví dụ Vùng 1 – Trung tâm
+description|VARCHAR(255)||Mô tả khu vực của vùng
+END
+### 3.3.6. Bảng wards – Phường
+TABLE: Bảng wards | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã phường
+name|VARCHAR(100)|NOT NULL, UNIQUE|Tên phường theo địa giới 2 cấp, ví dụ Cầu Giấy
+zone_id|BIGINT|FK → delivery_zones.id, cho phép NULL|Vùng giao hàng; NULL nghĩa là ngoài phạm vi phục vụ
+END
+### 3.3.7. Bảng price_configs – Bảng giá cước
+P: Mỗi dịch vụ có đúng một dòng. Bảng không có khóa ngoại; hệ thống tra bảng giá theo service_type khi tính phí.
+TABLE: Bảng price_configs | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã bảng giá
+service_type|ENUM|NOT NULL, UNIQUE|TIEU_CHUAN hoặc HOA_TOC
+same_zone_fee|BIGINT|NOT NULL|Cước cơ bản khi lấy và giao cùng vùng (đồng)
+cross_zone_fee|BIGINT|NOT NULL|Cước cơ bản khi khác vùng (đồng)
+included_weight_gram|INT|NOT NULL|Khối lượng đã gồm trong cước cơ bản (g)
+step_weight_gram|INT|NOT NULL|Độ lớn mỗi bước vượt cân (g)
+extra_fee_per_step|BIGINT|NOT NULL|Phí cho mỗi bước vượt cân (đồng)
+max_weight_gram|INT|NOT NULL|Khối lượng tối đa dịch vụ nhận (g)
+surcharge|BIGINT|NOT NULL|Phụ phí cố định của dịch vụ (đồng)
+END
+### 3.3.8. Bảng orders – Đơn giao hàng
+P: Bảng trung tâm của lược đồ, có 6 khóa ngoại tới shops, shippers, wards (2 lần), cod_remittances và settlements.
+TABLE: Bảng orders | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã đơn (khóa kỹ thuật)
+code|VARCHAR(20)|UNIQUE|Mã đơn hiển thị GH + yyMMdd + 5 chữ số, gán ngay sau khi lưu
+version|BIGINT|NOT NULL|Số phiên bản cho khóa lạc quan
+shop_id|BIGINT|NOT NULL, FK → shops.id|Shop gửi hàng
+pickup_address|VARCHAR(255)|NOT NULL|Địa chỉ lấy hàng
+pickup_ward_id|BIGINT|NOT NULL, FK → wards.id|Phường lấy hàng
+receiver_name|VARCHAR(100)|NOT NULL|Tên người nhận
+receiver_phone|VARCHAR(20)|NOT NULL|Số điện thoại người nhận
+receiver_address|VARCHAR(255)|NOT NULL|Địa chỉ giao hàng
+delivery_ward_id|BIGINT|NOT NULL, FK → wards.id|Phường giao hàng
+item_description|VARCHAR(255)|NOT NULL|Nội dung hàng hóa
+weight_gram|INT|NOT NULL|Khối lượng (g)
+cod_amount|BIGINT|NOT NULL|Tiền thu hộ (đồng), 0 nếu không thu hộ
+service_type|ENUM|NOT NULL|TIEU_CHUAN hoặc HOA_TOC
+shipping_fee|BIGINT|NOT NULL|Phí vận chuyển tính lúc tạo đơn (đồng)
+note|VARCHAR(500)||Ghi chú cho shipper
+status|ENUM|NOT NULL|Một trong 8 trạng thái của OrderStatus
+shipper_id|BIGINT|FK → shippers.id, cho phép NULL|Shipper được phân công; NULL khi chưa phân công
+failed_attempts|INT|NOT NULL|Số lần giao thất bại (tối đa 3)
+last_fail_reason|VARCHAR(500)||Lý do thất bại gần nhất
+collected_amount|BIGINT|NOT NULL|Tiền shipper đã thu khi giao thành công
+delivered_at|DATETIME(6)||Thời điểm giao thành công
+finished_at|DATETIME(6)||Thời điểm đơn kết thúc (thành công, hoàn, hủy)
+cod_remittance_id|BIGINT|FK → cod_remittances.id, cho phép NULL|Phiếu nộp COD chứa đơn
+settlement_id|BIGINT|FK → settlements.id, cho phép NULL|Phiếu đối soát chứa đơn
+created_at|DATETIME(6)||Thời điểm tạo đơn
+updated_at|DATETIME(6)||Thời điểm cập nhật gần nhất
+END
+### 3.3.9. Bảng order_status_histories – Nhật ký trạng thái
+TABLE: Bảng order_status_histories | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã dòng nhật ký
+order_id|BIGINT|NOT NULL, FK → orders.id|Đơn được ghi nhật ký
+from_status|ENUM||Trạng thái trước; NULL ở dòng tạo đơn
+to_status|ENUM|NOT NULL|Trạng thái sau
+actor_name|VARCHAR(100)|NOT NULL|Tên người thao tác tại thời điểm đó
+actor_role|VARCHAR(30)||Vai trò người thao tác
+note|VARCHAR(500)||Ghi chú, ví dụ lý do thất bại, số tiền đã thu
+created_at|DATETIME(6)||Thời điểm thao tác
+END
+### 3.3.10. Bảng cod_remittances – Phiếu nộp COD
+TABLE: Bảng cod_remittances | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã phiếu (khóa kỹ thuật)
+code|VARCHAR(20)|UNIQUE|Mã phiếu hiển thị NP + yyMMdd + 5 chữ số
+shipper_id|BIGINT|NOT NULL, FK → shippers.id|Shipper nộp tiền
+total_amount|BIGINT|NOT NULL|Tổng tiền nộp (đồng)
+status|ENUM|NOT NULL|CHO_XAC_NHAN, DA_XAC_NHAN, TU_CHOI
+reviewed_by|VARCHAR(100)||Tên quản trị viên duyệt phiếu
+reviewed_at|DATETIME(6)||Thời điểm duyệt
+note|VARCHAR(500)||Ghi chú; lý do từ chối được nối thêm vào đây
+created_at|DATETIME(6)||Thời điểm lập phiếu
+END
+### 3.3.11. Bảng settlements – Phiếu đối soát
+TABLE: Bảng settlements | 4.3 3.4 3.5 4.8
+Cột|Kiểu|Ràng buộc|Ý nghĩa
+id|BIGINT|PK, tự tăng|Mã phiếu (khóa kỹ thuật)
+code|VARCHAR(20)|UNIQUE|Mã phiếu hiển thị DS + yyMMdd + 5 chữ số
+shop_id|BIGINT|NOT NULL, FK → shops.id|Shop được đối soát
+total_cod|BIGINT|NOT NULL|Tổng tiền thu hộ của các đơn giao thành công
+total_fee|BIGINT|NOT NULL|Tổng phí vận chuyển của mọi đơn trong phiếu
+payout_amount|BIGINT|NOT NULL|Tiền trả shop = total_cod − total_fee (âm nếu shop phải trả)
+status|ENUM|NOT NULL|CHO_THANH_TOAN, DA_THANH_TOAN
+bank_name, bank_account_no, bank_account_holder|VARCHAR||Thông tin ngân hàng của shop chụp lại lúc lập phiếu
+payment_ref|VARCHAR(100)||Mã giao dịch chuyển khoản
+paid_at|DATETIME(6)||Thời điểm thanh toán
+note|VARCHAR(500)||Ghi chú
+created_at|DATETIME(6)||Thời điểm lập phiếu
+END
+### 3.3.12. Nhận xét về chuẩn hóa
+P: Lược đồ đạt dạng chuẩn 3 (3NF) ở phần dữ liệu gốc. Một số cột được lưu lặp có chủ đích để giữ đúng lịch sử, vì giá trị gốc có thể thay đổi sau này:
+B: orders.shipping_fee:: lưu phí tại thời điểm tạo đơn; quản trị viên đổi bảng giá sau đó không làm thay đổi phí của đơn cũ.
+B: settlements.bank_*:: chụp lại tài khoản ngân hàng của shop lúc lập phiếu.
+B: Cột tổng:: (cod_remittances.total_amount, settlements.total_cod, total_fee, payout_amount) giữ số tiền của phiếu cố định sau khi lập.
+B: actor_name, reviewed_by:: lưu tên người thao tác dạng văn bản như một dòng nhật ký, không đổi khi người dùng sửa họ tên.
+## 3.4. Các quan hệ trong lược đồ
+P: Bảng 3.14 liệt kê 15 quan hệ khóa ngoại. Bản số viết theo thứ tự bảng phía một – bảng phía nhiều.
+TABLE: Các quan hệ khóa ngoại trong lược đồ | 1 2.6 3 3.5 1.7 4.2
+STT|Bảng phía một|Bảng phía nhiều|Khóa ngoại|Bản số|Ý nghĩa
+1|users|shops|shops.id|1 – 0..1|Kế thừa: một tài khoản có tối đa một bản ghi shop
+2|users|shippers|shippers.id|1 – 0..1|Kế thừa: tài khoản shipper
+3|users|admins|admins.id|1 – 0..1|Kế thừa: tài khoản quản trị viên
+4|delivery_zones|wards|wards.zone_id (NULL được)|0..1 – n|Một vùng gồm nhiều phường; phường có thể chưa thuộc vùng nào
+5|delivery_zones|shippers|shippers.zone_id (NULL được)|0..1 – n|Vùng phụ trách của shipper
+6|wards|shops|shops.ward_id|1 – n|Phường lấy hàng mặc định của shop
+7|wards|orders|orders.pickup_ward_id|1 – n|Phường lấy hàng của đơn
+8|wards|orders|orders.delivery_ward_id|1 – n|Phường giao hàng của đơn
+9|shops|orders|orders.shop_id|1 – n|Một shop có nhiều đơn
+10|shippers|orders|orders.shipper_id (NULL được)|0..1 – n|Một shipper giao nhiều đơn; đơn có thể chưa phân công
+11|orders|order_status_histories|order_status_histories.order_id|1 – n|Một đơn có nhiều dòng nhật ký
+12|shippers|cod_remittances|cod_remittances.shipper_id|1 – n|Một shipper lập nhiều phiếu nộp
+13|cod_remittances|orders|orders.cod_remittance_id (NULL được)|0..1 – n|Một phiếu nộp gồm nhiều đơn
+14|shops|settlements|settlements.shop_id|1 – n|Một shop có nhiều phiếu đối soát
+15|settlements|orders|orders.settlement_id (NULL được)|0..1 – n|Một phiếu đối soát gồm nhiều đơn
+END
+P: Quan hệ giữa phiếu tiền và đơn (quan hệ 13 và 15) được biểu diễn bằng khóa ngoại trên bảng orders thay vì bảng trung gian, vì mỗi đơn chỉ thuộc tối đa một phiếu nộp COD và một phiếu đối soát. Khi quản trị viên từ chối một phiếu nộp, cột orders.cod_remittance_id của các đơn trong phiếu được đặt lại NULL để shipper lập phiếu mới; phiếu bị từ chối vẫn được giữ lại làm lịch sử.
+P: Hai quan hệ 7 và 8 cùng nối orders với wards nhưng mang ý nghĩa khác nhau (phường lấy và phường giao), nên dùng hai cột khóa ngoại riêng. Từ vùng của hai phường này, hệ thống xác định tuyến cùng vùng hay khác vùng để tính phí.
+## 3.5. Ràng buộc toàn vẹn
+### 3.5.1. Ràng buộc trên cơ sở dữ liệu
+B: Khóa chính:: mọi bảng có khóa chính id. Riêng shops, shippers, admins dùng khóa chính đồng thời là khóa ngoại tới users.
+B: Duy nhất (UNIQUE):: users.username, delivery_zones.code, wards.name, price_configs.service_type, orders.code, cod_remittances.code, settlements.code.
+B: Khóa ngoại:: 15 khóa ngoại như mục 3.4; khóa ngoại NOT NULL thể hiện quan hệ bắt buộc.
+B: Miền giá trị:: các cột trạng thái và dịch vụ dùng kiểu ENUM nên chỉ nhận đúng các giá trị đã khai báo.
+B: Khóa lạc quan:: cột orders.version tăng sau mỗi lần cập nhật; nếu hai người cùng sửa một đơn, lần ghi sau bị từ chối thay vì ghi đè.
+### 3.5.2. Ràng buộc nghiệp vụ kiểm tra trong lớp nghiệp vụ
+P: Một số quy tắc không biểu diễn được bằng ràng buộc của cơ sở dữ liệu nên được kiểm tra trong các lớp ở Chương 2, trước khi dữ liệu được ghi:
+TABLE: Ràng buộc nghiệp vụ và nơi kiểm tra | 9 7
+Ràng buộc|Nơi kiểm tra
+Tiền thu khi giao thành công phải bằng cod_amount|DeliveringState.deliverSuccess()
+Báo giao thất bại phải có lý do|DeliveringState.deliverFail()
+failed_attempts không vượt quá 3; quá thì chỉ được chuyển hoàn|FailedDeliveryState, Order.canRetryDelivery()
+Chỉ hủy đơn trước khi lấy hàng|WaitingAssignmentState, WaitingPickupState (các trạng thái khác từ chối)
+Không phân công cho shipper đang bị khóa|AbstractOrderState.requireActiveShipper()
+Phường lấy và giao phải thuộc vùng phục vụ; khối lượng không vượt mức tối đa|AbstractShippingFeeStrategy.calculate()
+Hỏa tốc chỉ nhận tuyến cùng vùng|ExpressFeeStrategy.validateSpecific()
+Mỗi đơn chỉ vào một phiếu nộp COD và một phiếu đối soát|Order.attachToRemittance(), Order.attachToSettlement()
+Đơn giao thành công chỉ được đối soát khi tiền COD đã được xác nhận|Order.isReadyForSettlement()
+payout_amount = total_cod − total_fee; nếu dương thì shop phải có tài khoản ngân hàng|Hàm khởi tạo Settlement
+Phiếu nộp đã xử lý không được xác nhận hoặc từ chối lại; phiếu đối soát đã thanh toán không thanh toán lại|CodRemittance.confirm(), reject(); Settlement.markPaid()
+Shop, shipper chỉ xem và thao tác trên đơn của mình|OrderService.findForShop(), findForShipper()
+END
+## 3.6. Ví dụ truy vấn trên lược đồ
+P: Truy vấn lấy các đơn của một shop đủ điều kiện đối soát cho thấy cách các quan hệ được dùng cùng nhau: đơn chưa thuộc phiếu đối soát nào, và hoặc đã hoàn, hoặc đã giao thành công mà không thu hộ hay tiền thu hộ đã được xác nhận nộp về.
+CODE:
+SELECT o.*
+FROM orders o
+  LEFT JOIN cod_remittances r ON r.id = o.cod_remittance_id
+WHERE o.shop_id = ?
+  AND o.settlement_id IS NULL
+  AND (o.status = 'DA_HOAN'
+       OR (o.status = 'GIAO_THANH_CONG'
+           AND (o.collected_amount = 0 OR r.status = 'DA_XAC_NHAN')))
+ORDER BY o.created_at;
+END
+
+# KẾT LUẬN
+P: Báo cáo đã trình bày thiết kế biểu đồ lớp và lược đồ cơ sở dữ liệu cho hệ thống quản lý giao hàng nội thành Hà Nội và đối soát tiền thu hộ. Biểu đồ lớp gồm 5 gói nghiệp vụ, áp dụng các nguyên lý đóng gói, trừu tượng, kế thừa, đa hình cùng các mẫu State, Strategy, Template Method, Factory và Observer. Lược đồ cơ sở dữ liệu gồm 12 bảng với 15 quan hệ khóa ngoại, được ánh xạ trực tiếp từ các lớp thực thể; các quy tắc nghiệp vụ mà cơ sở dữ liệu không biểu diễn được đều được kiểm tra trong lớp nghiệp vụ tương ứng.
+P: Thiết kế đã được cài đặt và kiểm thử bằng 42 ca kiểm thử tự động (chuyển trạng thái đơn, tính phí, toàn bộ quy trình tạo đơn – giao – nộp COD – đối soát, phân quyền). Hướng phát triển gồm: tích hợp bản đồ để gợi ý shipper theo khoảng cách, thanh toán đối soát tự động qua ngân hàng, và ứng dụng di động cho shipper.
+
+# PHỤ LỤC. SCRIPT TẠO CƠ SỞ DỮ LIỆU (MySQL)
+P: Script dưới đây được Hibernate sinh từ các lớp thực thể với MySQLDialect (tệp docs/report/schema-mysql.sql trong mã nguồn).
+CODEFILE: schema-mysql.sql

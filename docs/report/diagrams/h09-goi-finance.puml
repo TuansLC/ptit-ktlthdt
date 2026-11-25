@@ -1,0 +1,65 @@
+@startuml h09-goi-finance
+!include _style.iuml
+
+abstract class Voucher {
+  - id : Long
+  - code : String
+  - createdAt : LocalDateTime
+  - note : String
+  # {abstract} codePrefix() : String
+  + {abstract} getAmount() : long
+  + {abstract} getStatusLabel() : String
+  + {abstract} getStatusBadge() : String
+  + assignCode()
+  # appendNote(extra)
+}
+class CodRemittance {
+  - shipper : Shipper
+  - orders : List<Order>
+  - totalAmount : long
+  - status : RemittanceStatus
+  - reviewedBy : String
+  - reviewedAt : LocalDateTime
+  # codePrefix() = "NP"
+  + getAmount() : long
+  + confirm(reviewer)
+  + reject(reviewer, reason)
+  + isConfirmed() : boolean
+}
+class Settlement {
+  - shop : Shop
+  - orders : List<Order>
+  - totalCod : long
+  - totalFee : long
+  - payoutAmount : long
+  - status : SettlementStatus
+  - bankName, bankAccountNo, bankAccountHolder : String
+  - paymentRef : String
+  - paidAt : LocalDateTime
+  # codePrefix() = "DS"
+  + getAmount() : long
+  + markPaid(paymentRef)
+  + isShopOwing() : boolean
+}
+enum RemittanceStatus {
+  CHO_XAC_NHAN
+  DA_XAC_NHAN
+  TU_CHOI
+}
+enum SettlementStatus {
+  CHO_THANH_TOAN
+  DA_THANH_TOAN
+}
+class Shipper
+class Shop
+class Order
+
+Voucher <|-- CodRemittance
+Voucher <|-- Settlement
+CodRemittance --> RemittanceStatus
+Settlement --> SettlementStatus
+CodRemittance "*" --> "1" Shipper
+Settlement "*" --> "1" Shop
+CodRemittance "0..1" o-- "*" Order : gồm các đơn
+Settlement "0..1" o-- "*" Order : gồm các đơn
+@enduml

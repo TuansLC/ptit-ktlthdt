@@ -1,0 +1,55 @@
+@startuml h07-state-pattern
+!include _style.iuml
+
+class Order {
+  - status : OrderStatus
+  + pickUp()
+  + deliverSuccess(amount)
+  + ...()
+  ~ moveTo(next)
+}
+note left of Order
+  pickUp() {
+    status.getState().pickUp(this);
+  }
+end note
+enum OrderStatus {
+  + getState() : OrderState
+}
+interface OrderState {
+  + allowedActions(order) : Set<OrderAction>
+  + assignShipper(order, shipper)
+  + cancel(order)
+  + pickUp(order)
+  + deliverSuccess(order, amount)
+  + deliverFail(order, reason)
+  + retryDelivery(order, shipper)
+  + startReturn(order)
+  + confirmReturned(order)
+}
+abstract class AbstractOrderState {
+  # reject(order, action)
+  # requireActiveShipper(shipper)
+}
+note right of AbstractOrderState
+  Mặc định mọi thao tác bị từ chối
+  (ném BusinessException). Lớp con chỉ
+  ghi đè thao tác hợp lệ ở trạng thái đó.
+end note
+class WaitingAssignmentState
+class WaitingPickupState
+class DeliveringState
+class FailedDeliveryState
+class ReturningState
+class FinalState
+
+Order --> OrderStatus
+OrderStatus --> OrderState
+OrderState <|.. AbstractOrderState
+AbstractOrderState <|-- WaitingAssignmentState
+AbstractOrderState <|-- WaitingPickupState
+AbstractOrderState <|-- DeliveringState
+AbstractOrderState <|-- FailedDeliveryState
+AbstractOrderState <|-- ReturningState
+AbstractOrderState <|-- FinalState
+@enduml

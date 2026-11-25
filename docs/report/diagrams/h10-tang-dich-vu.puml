@@ -1,0 +1,54 @@
+@startuml h10-tang-dich-vu
+!include _style.iuml
+hide empty members
+
+class OrderService <<service>> {
+  + createOrder(shopId, form) : Order
+  + assign(adminId, orderId, shipperId)
+  + pickUp(shipperId, orderId)
+  + deliverSuccess(shipperId, orderId, amount)
+  + deliverFail(shipperId, orderId, reason)
+  + retry(adminId, orderId, shipperId)
+  + startReturn(adminId, orderId)
+  + confirmReturned(shipperId, orderId)
+  - transition(order, actor, note, action)
+}
+class PricingService <<service>>
+class AccountService <<service>>
+class ZoneService <<service>>
+class RemittanceService <<service>> {
+  + submit(shipperId, note) : CodRemittance
+  + confirm(adminId, id)
+  + reject(adminId, id, reason)
+}
+class SettlementService <<service>> {
+  + create(shopId, note) : Settlement
+  + markPaid(id, paymentRef)
+}
+class StatisticsService <<service>> {
+  + adminStats(from, to) : AdminStats
+}
+class OrderStatusChangedEvent <<record>> {
+  order : Order
+  fromStatus : OrderStatus
+  toStatus : OrderStatus
+  actor : User
+  note : String
+}
+interface ApplicationEventPublisher
+class OrderHistoryRecorder <<listener>> {
+  + onStatusChanged(event)
+}
+class OrderStatusHistory
+
+OrderService --> PricingService
+OrderService --> AccountService
+OrderService --> ZoneService
+OrderService --> ApplicationEventPublisher : publishEvent
+ApplicationEventPublisher ..> OrderHistoryRecorder : thông báo
+OrderService ..> OrderStatusChangedEvent : tạo
+OrderHistoryRecorder ..> OrderStatusChangedEvent
+OrderHistoryRecorder ..> OrderStatusHistory : lưu
+RemittanceService --> AccountService
+SettlementService --> AccountService
+@enduml
